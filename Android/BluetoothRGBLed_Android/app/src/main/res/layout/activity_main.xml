@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,18 +17,57 @@
         android:layout_height="match_parent">
 
         <CheckBox
+            android:id="@+id/checkboxLED1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Toggle LED"
-            android:id="@+id/checkboxLED1"
+            android:layout_alignStart="@+id/bluetoothStatus"
+            android:layout_alignLeft="@+id/bluetoothStatus"
+            android:layout_gravity="center_horizontal"
             android:layout_marginTop="10dp"
             android:checked="false"
-            android:layout_alignLeft="@+id/bluetoothStatus"
-            android:layout_alignStart="@+id/bluetoothStatus"
             android:scaleX="1.7"
             android:scaleY="1.7"
-            android:textStyle="bold"
-            android:layout_gravity="center_horizontal" />
+            android:text="Toggle LED"
+            android:textStyle="bold" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/redSlider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:value="false"
+            app:haloColor="#FF1744"
+            app:thumbColor="#FF1744"
+            app:tickColorActive="#FF1744"
+            app:tickColorInactive="#FF1744"
+            app:trackColor="#4DFF1744"
+            app:trackColorActive="#FF1744"
+            app:trackColorInactive="#4DFF1744"
+            android:valueFrom="0.0"
+            android:valueTo="255"
+            android:stepSize="1"/>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/grnSlider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:thumbColor="#00E676"
+            app:trackColor="#4D00E676"
+            app:trackColorActive="#8000E676"
+            app:trackColorInactive="#4D00E676"
+            android:valueFrom="0.0"
+            android:valueTo="255"
+            android:stepSize="1" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/bluSlider"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:thumbColor="#3D5AFE"
+            app:trackColor="#4D651FFF"
+            app:trackColorActive="#FFFFFF"
+            android:valueFrom="0.0"
+            android:valueTo="255"
+            android:stepSize="1" />
 
         <LinearLayout
             android:orientation="horizontal"

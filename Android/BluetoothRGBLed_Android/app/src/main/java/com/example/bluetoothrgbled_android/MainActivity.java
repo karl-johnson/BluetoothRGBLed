@@ -10,6 +10,8 @@ import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -20,6 +22,8 @@ import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.android.material.slider.Slider;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,6 +46,9 @@ public class MainActivity extends AppCompatActivity {
     private ArrayAdapter<String> mBTArrayAdapter;
     private ListView mDevicesListView;
     private CheckBox mLED1;
+    private Slider mRedSlider;
+    private Slider mGrnSlider;
+    private Slider mBluSlider;
 
     private Handler mHandler; // Our main handler that will receive callback notifications
     private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
@@ -54,7 +61,8 @@ public class MainActivity extends AppCompatActivity {
     private final static int REQUEST_ENABLE_BT = 1; // used to identify adding bluetooth names
     private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
     private final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
-
+    private final static byte INSTRUCTION_SET_LED = (byte) 0b00001000;
+    private final static byte INSTURCTION_CNF_LED = (byte) 0b10001000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +76,9 @@ public class MainActivity extends AppCompatActivity {
         mDiscoverBtn = (Button)findViewById(R.id.discover);
         mListPairedDevicesBtn = (Button)findViewById(R.id.PairedBtn);
         mLED1 = (CheckBox)findViewById(R.id.checkboxLED1);
+        mRedSlider = (Slider)findViewById(R.id.redSlider);
+        mGrnSlider = (Slider)findViewById(R.id.grnSlider);
+        mBluSlider = (Slider)findViewById(R.id.bluSlider);
 
         mBTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
         mBTAdapter = BluetoothAdapter.getDefaultAdapter(); // get a handle on the bluetooth radio
@@ -99,6 +110,16 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+        /*mRedSlider.setValueFrom(0);
+        mRedSlider.setValueTo(255);
+        mRedSlider.setStepSize(1);
+        mGrnSlider.setValueFrom(0);
+        mGrnSlider.setValueTo(255);
+        mGrnSlider.setStepSize(1);
+        mBluSlider.setValueFrom(0);
+        mBluSlider.setValueTo(255);
+        mBluSlider.setStepSize(1);
+*/
 
         if (mBTArrayAdapter == null) {
             // Device does not support Bluetooth
@@ -110,12 +131,46 @@ public class MainActivity extends AppCompatActivity {
             mLED1.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View v){
-                    if(mConnectedThread != null) //First check to make sure thread created
-                        mConnectedThread.write("1");
+                    char redValue = (char) mRedSlider.getValue();
+                    char grnValue = (char) mGrnSlider.getValue();
+                    char bluValue = (char) mBluSlider.getValue();
+                    Toast.makeText(getApplicationContext(),"Got values",Toast.LENGTH_SHORT).show();
+                    if(mConnectedThread != null) {//First check to make sure thread created
+                        if ((mLED1.isChecked())) {
+                            mConnectedThread.writeIntInstruction(INSTRUCTION_SET_LED,
+                                    (char) (((redValue & 0x00FF) << 8) | (grnValue & 0x00FF)), (char) (bluValue << 8)); // set led to color
+                            Toast.makeText(getApplicationContext(),"Sent value",Toast.LENGTH_SHORT).show();
+                        }
+                        else {
+                            mConnectedThread.writeIntInstruction(INSTRUCTION_SET_LED,
+                                    (char) 0x0000, (char) 0x0000); // turn led off
+                            Toast.makeText(getApplicationContext(),"Sent low",Toast.LENGTH_SHORT).show();
+                        }
+                    }
                 }
             });
 
-
+            mRedSlider.addOnChangeListener(new Slider.OnChangeListener() {
+                @Override
+                public void onValueChange(Slider slider, float value, boolean fromUser) {
+                    char redValue = (char) mRedSlider.getValue();
+                    char grnValue = (char) mGrnSlider.getValue();
+                    char bluValue = (char) mBluSlider.getValue();
+                    Toast.makeText(getApplicationContext(),"Got values",Toast.LENGTH_SHORT).show();
+                    if(mConnectedThread != null) {//First check to make sure thread created
+                        if ((mLED1.isChecked())) {
+                            mConnectedThread.writeIntInstruction(INSTRUCTION_SET_LED,
+                                    (char) (((redValue & 0x00FF) << 8) | (grnValue & 0x00FF)), (char) (bluValue << 8)); // set led to color
+                            Toast.makeText(getApplicationContext(),"Sent value",Toast.LENGTH_SHORT).show();
+                        }
+                        else {
+                            mConnectedThread.writeIntInstruction(INSTRUCTION_SET_LED,
+                                    (char) 0x0000, (char) 0x0000); // turn led off
+                            Toast.makeText(getApplicationContext(),"Sent low",Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                }
+            });
             mScanBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -335,6 +390,24 @@ public class MainActivity extends AppCompatActivity {
             byte[] bytes = input.getBytes();           //converts entered String into bytes
             try {
                 mmOutStream.write(bytes);
+            } catch (IOException e) { }
+        }
+
+        public void writeIntInstruction(byte instructionByte, char value1, char value2) {
+            // this assumes Java and the Arduino have same endianness, which is a mighty assumption
+            byte[] value1bytes = {(byte) (value1 >> 8), (byte) value1};
+            byte[] value2bytes = {(byte) (value2 >> 8), (byte) value2};
+            byte xorSignature = (byte) (instructionByte ^ value1bytes[0] ^ value1bytes[1]
+                                ^ value2bytes[0] ^ value2bytes[1]);
+            // this is messy but it's more annoying to add a array concatenation method/library
+            byte[] sendBytes = {(byte) 0x00, instructionByte, value1bytes[1], value2bytes[0],
+                value2bytes[1], value2bytes[0], xorSignature};
+            try {
+                mmOutStream.write((byte) 0x00);
+                mmOutStream.write(instructionByte);
+                mmOutStream.write(value1bytes);
+                mmOutStream.write(value2bytes);
+                mmOutStream.write(xorSignature);
             } catch (IOException e) { }
         }
 
