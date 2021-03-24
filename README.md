@@ -4,5 +4,6 @@
   - Instruction and XOR-checksum based serial comm protocol over bluetooth
   - Managing both Arduino and Android code in one repo (crucial for instruction consistency between devices)
   - Getting certain UI elements (joystick, toggles, etc) to work in Android app
+  - Creating a bluetooth Android service to allow control of Arduino from a notification while app is closed
   
   Hopefully, once figuring out these things, these principles will transfer to making a motorized panoramic tripod head controller app.
