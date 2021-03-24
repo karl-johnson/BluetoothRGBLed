@@ -34,6 +34,10 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
+    // extra name definitions
+    public static final String EXTRA_BTADAPTER = "com.example.BluetoothRGBLed.BTADAPTER";
+    public static final String EXTRA_BTSTATUS = "com.example.BluetoothRGBLed.BTSTATUS";
+
     // GUI Components
     private TextView mBluetoothStatus;
     private TextView mReadBuffer;
@@ -41,8 +45,8 @@ public class MainActivity extends AppCompatActivity {
     private Button mOffBtn;
     private Button mListPairedDevicesBtn;
     private Button mDiscoverBtn;
-    private BluetoothAdapter mBTAdapter;
-    private Set<BluetoothDevice> mPairedDevices;
+    public BluetoothAdapter mBTAdapter;
+    public Set<BluetoothDevice> mPairedDevices;
     private ArrayAdapter<String> mBTArrayAdapter;
     private ListView mDevicesListView;
     private CheckBox mLED1;
@@ -58,17 +62,17 @@ public class MainActivity extends AppCompatActivity {
 
 
     // #defines for identifying shared types between calling functions
-    private final static int REQUEST_ENABLE_BT = 1; // used to identify adding bluetooth names
-    private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
-    private final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
+    public final static int REQUEST_ENABLE_BT = 1; // used to identify adding bluetooth names
+    public final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
+    public final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
     private final static byte INSTRUCTION_SET_LED = (byte) 0b00001000;
-    private final static byte INSTURCTION_CNF_LED = (byte) 0b10001000;
+    private final static byte INSTRuCTION_CNF_LED = (byte) 0b10001000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        setTitle("Control LED");
         mBluetoothStatus = (TextView)findViewById(R.id.bluetoothStatus);
         mReadBuffer = (TextView) findViewById(R.id.readBuffer);
         mScanBtn = (Button)findViewById(R.id.scan);
@@ -86,8 +90,6 @@ public class MainActivity extends AppCompatActivity {
         mDevicesListView = (ListView)findViewById(R.id.devicesListView);
         mDevicesListView.setAdapter(mBTArrayAdapter); // assign model to view
         mDevicesListView.setOnItemClickListener(mDeviceClickListener);
-
-
 
 
         mHandler = new Handler(){
@@ -110,16 +112,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-        /*mRedSlider.setValueFrom(0);
-        mRedSlider.setValueTo(255);
-        mRedSlider.setStepSize(1);
-        mGrnSlider.setValueFrom(0);
-        mGrnSlider.setValueTo(255);
-        mGrnSlider.setStepSize(1);
-        mBluSlider.setValueFrom(0);
-        mBluSlider.setValueTo(255);
-        mBluSlider.setStepSize(1);
-*/
 
         if (mBTArrayAdapter == null) {
             // Device does not support Bluetooth
@@ -199,6 +191,14 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    public void onBluetoothPress(View view) {
+        Intent intent = new Intent(this, BluetoothConfigActivity.class);
+        // need to pass bluetooth socket to new activity
+        // tons of suggestions online to use service/application/singleton, but this works for now
+
+        startActivity(intent);
     }
 
     private void bluetoothOn(View view){
@@ -371,6 +371,7 @@ public class MainActivity extends AppCompatActivity {
                     // Read from the InputStream
                     bytes = mmInStream.available();
                     if(bytes != 0) {
+                        // TODO: more robust receiving
                         SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
                         bytes = mmInStream.available(); // how many bytes are ready to be read?
                         bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read

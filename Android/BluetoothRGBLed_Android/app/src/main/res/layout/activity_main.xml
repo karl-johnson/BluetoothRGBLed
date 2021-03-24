@@ -116,16 +116,27 @@
                 android:maxLines="1"
                 android:layout_centerHorizontal="true"
                 android:layout_alignTop="@+id/checkboxLED1" />
+
         </LinearLayout>
 
         <Button
+            android:id="@+id/scan2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Bluetooth ON"
-            android:id="@+id/scan"
             android:layout_centerVertical="true"
             android:layout_toStartOf="@+id/off"
-            android:layout_toLeftOf="@+id/off" />
+            android:layout_toLeftOf="@+id/off"
+            android:onClick="onBluetoothPress"
+            android:text="Bluetooth Settings" />
+
+        <Button
+            android:id="@+id/scan"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@+id/off"
+            android:layout_toLeftOf="@+id/off"
+            android:text="Bluetooth ON" />
 
         <Button
             android:layout_width="match_parent"
