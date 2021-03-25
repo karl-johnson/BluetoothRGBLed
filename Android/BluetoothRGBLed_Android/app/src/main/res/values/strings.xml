@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">BluetoothRGBLed_Android</string>
+    <string name="status_bt_not_found">Status: Bluetooth not found</string>
+    <string name="bt_enabled">Bluetooth enabled</string>
+    <string name="bt_disabled">Bluetooth disabled</string>
+    <string name="enabled">Enabled</string>
+    <string name="disabled">Disabled</string>
+    <string name="connecting">Connecting...</string>
 </resources>

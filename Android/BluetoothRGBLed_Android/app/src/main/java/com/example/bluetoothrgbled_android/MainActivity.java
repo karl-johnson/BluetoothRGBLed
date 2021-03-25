@@ -4,10 +4,13 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.os.SystemClock;
 
@@ -38,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
     public static final String EXTRA_BTADAPTER = "com.example.BluetoothRGBLed.BTADAPTER";
     public static final String EXTRA_BTSTATUS = "com.example.BluetoothRGBLed.BTSTATUS";
 
+    BluetoothService mBluetoothService;
+    private boolean mBound = false; // are we bound to BluetoothService?
+    private boolean mShouldUnbind; // to prevent unbinding when we shouldn't
     // GUI Components
     private TextView mBluetoothStatus;
     private TextView mReadBuffer;
@@ -92,6 +98,8 @@ public class MainActivity extends AppCompatActivity {
         mDevicesListView.setOnItemClickListener(mDeviceClickListener);
 
 
+
+
         mHandler = new Handler(){
             public void handleMessage(Message msg){
                 if(msg.what == MESSAGE_READ){
@@ -115,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (mBTArrayAdapter == null) {
             // Device does not support Bluetooth
-            mBluetoothStatus.setText("Status: Bluetooth not found");
+            mBluetoothStatus.setText(R.string.status_bt_not_found);
             Toast.makeText(getApplicationContext(),"Bluetooth device not found!",Toast.LENGTH_SHORT).show();
         }
         else {
@@ -193,19 +201,65 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private ServiceConnection connection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
+            mBluetoothService = binder.getService();
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+        }
+    };
+
+    public void onStart() {
+        super.onStart();
+        Intent BTServiceIntent = new Intent(this, BluetoothService.class);
+        startService(BTServiceIntent);
+        bindService(BTServiceIntent, connection, Context.BIND_AUTO_CREATE);
+        mShouldUnbind = true;
+    }
+    public void onPause() {
+        super.onPause();
+        if (mShouldUnbind) {
+            // Release information about the service's state.
+            //Toast.makeText(this, "att. unbind", Toast.LENGTH_SHORT).show();
+            unbindService(connection);
+            mShouldUnbind = false;
+        }
+    }
+    public void onResume() {
+        super.onResume();
+        super.onStart();
+        Intent BTServiceIntent = new Intent(this, BluetoothService.class);
+        bindService(BTServiceIntent, connection, Context.BIND_AUTO_CREATE);
+        mShouldUnbind = true;
+    }
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mShouldUnbind) {
+            // Release information about the service's state.
+            unbindService(connection);
+            mShouldUnbind = false;
+        }
+    }
     public void onBluetoothPress(View view) {
         Intent intent = new Intent(this, BluetoothConfigActivity.class);
-        // need to pass bluetooth socket to new activity
-        // tons of suggestions online to use service/application/singleton, but this works for now
-
         startActivity(intent);
+        // no need to pass any bluetooth data, as it's all handled by Bluetooth Service
     }
 
     private void bluetoothOn(View view){
         if (!mBTAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-            mBluetoothStatus.setText("Bluetooth enabled");
+            mBluetoothStatus.setText(R.string.bt_enabled);
             Toast.makeText(getApplicationContext(),"Bluetooth turned on",Toast.LENGTH_SHORT).show();
 
         }
@@ -224,16 +278,16 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 // The user picked a contact.
                 // The Intent's data Uri identifies which contact was selected.
-                mBluetoothStatus.setText("Enabled");
+                mBluetoothStatus.setText(R.string.enabled);
             }
             else
-                mBluetoothStatus.setText("Disabled");
+                mBluetoothStatus.setText(R.string.disabled);
         }
     }
 
     private void bluetoothOff(View view){
         mBTAdapter.disable(); // turn off
-        mBluetoothStatus.setText("Bluetooth disabled");
+        mBluetoothStatus.setText(R.string.disabled);
         Toast.makeText(getApplicationContext(),"Bluetooth turned Off", Toast.LENGTH_SHORT).show();
     }
 
@@ -290,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            mBluetoothStatus.setText("Connecting...");
+            mBluetoothStatus.setText(R.string.connecting);
             // Get the device MAC address, which is the last 17 chars in the View
             String info = ((TextView) v).getText().toString();
             final String address = info.substring(info.length() - 17);
@@ -305,12 +359,12 @@ public class MainActivity extends AppCompatActivity {
                     BluetoothDevice device = mBTAdapter.getRemoteDevice(address);
 
                     try {
-                        mBTSocket = createBluetoothSocket(device);
+                        mBTSocket = mBluetoothService.createBluetoothSocket(device);
                     } catch (IOException e) {
                         fail = true;
                         Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
                     }
-                    // Establish the Bluetooth socket connection.
+                    // Establish  the Bluetooth socket connection.
                     try {
                         mBTSocket.connect();
                     } catch (IOException e) {
@@ -324,10 +378,8 @@ public class MainActivity extends AppCompatActivity {
                             Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
                         }
                     }
-                    if(fail == false) {
-                        mConnectedThread = new ConnectedThread(mBTSocket);
-                        mConnectedThread.start();
-
+                    if(!fail) {
+                        mConnectedThread = mBluetoothService.createBluetoothThread();
                         mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name)
                                 .sendToTarget();
                     }
@@ -336,6 +388,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+/*
     private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
         return  device.createRfcommSocketToServiceRecord(BTMODULEUUID);
         //creates secure outgoing connection with BT device using UUID
@@ -386,7 +439,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        /* Call this from the main activity to send data to the remote device */
+        // Call this from the main activity to send data to the remote device
         public void write(String input) {
             byte[] bytes = input.getBytes();           //converts entered String into bytes
             try {
@@ -412,11 +465,11 @@ public class MainActivity extends AppCompatActivity {
             } catch (IOException e) { }
         }
 
-        /* Call this from the main activity to shutdown the connection */
+        // Call this from the main activity to shutdown the connection
         public void cancel() {
             try {
                 mmSocket.close();
             } catch (IOException e) { }
         }
-    }
+    }*/
 }

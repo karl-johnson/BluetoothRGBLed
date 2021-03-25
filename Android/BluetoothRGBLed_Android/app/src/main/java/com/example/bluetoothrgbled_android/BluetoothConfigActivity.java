@@ -6,10 +6,15 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -18,19 +23,32 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Set;
+import java.util.UUID;
 
 public class BluetoothConfigActivity extends AppCompatActivity {
 
+    BluetoothService mBluetoothService;
+    private boolean mBound = false; // are we bound to BluetoothService?
+    private boolean mShouldUnbind; // to prevent unbinding when we shouldn't
+
     private TextView mBluetoothStatus;
+    private TextView mReadBuffer;
     private Button mScanBtn;
     private Button mOffBtn;
+    private Button mListPairedDevicesBtn;
+    private Button mDiscoverBtn;
     private ArrayAdapter<String> mBTArrayAdapter;
     public Set<BluetoothDevice> mPairedDevices;
+    private Handler mHandler; // Our main handler that will receive callback notifications
+    private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
+    private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
     private final static int REQUEST_ENABLE_BT = 1; // used to identify adding bluetooth names
     private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
     private final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
+    private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
 
     BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -41,10 +59,32 @@ public class BluetoothConfigActivity extends AppCompatActivity {
         setTitle("Bluetooth Settings");
 
         mBluetoothStatus = (TextView)findViewById(R.id.bluetoothStatus);
+        mReadBuffer = (TextView) findViewById(R.id.readBuffer);
         mScanBtn = (Button)findViewById(R.id.scan);
         mOffBtn = (Button)findViewById(R.id.off);
+        mDiscoverBtn = (Button)findViewById(R.id.discover);
+        mListPairedDevicesBtn = (Button)findViewById(R.id.PairedBtn);
         mBTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
+        mHandler = new Handler(){
+            public void handleMessage(Message msg){
+                if(msg.what == MESSAGE_READ){
+                    String readMessage = null;
+                    try {
+                        readMessage = new String((byte[]) msg.obj, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    mReadBuffer.setText(readMessage);
+                }
 
+                if(msg.what == CONNECTING_STATUS){
+                    if(msg.arg1 == 1)
+                        mBluetoothStatus.setText("Connected to Device: " + (String)(msg.obj));
+                    else
+                        mBluetoothStatus.setText("Connection Failed");
+                }
+            }
+        };
         // intent = getIntent();
         mScanBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,6 +100,49 @@ public class BluetoothConfigActivity extends AppCompatActivity {
             }
         });
 
+        mListPairedDevicesBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v){
+                listPairedDevices(v);
+            }
+        });
+
+        mDiscoverBtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                discover(v);
+            }
+        });
+
+    }
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
+            // We've bound to LocalService, cast the IBinder and get LocalService instance
+            BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
+
+            mBluetoothService = binder.getService();
+            mBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            mBound = false;
+        }
+    };
+
+    public void onStart() {
+
+        super.onStart();
+        Intent BTServiceIntent = new Intent(this, BluetoothService.class);
+        getApplicationContext().bindService(BTServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+
+        // TODO: debug by checking if this is working right
+        //Toast.makeText(this, "set bind bool", Toast.LENGTH_SHORT).show();
+        mShouldUnbind = true;
     }
     private void bluetoothOn(View view){
         if (!mBTAdapter.isEnabled()) {
@@ -129,6 +212,7 @@ public class BluetoothConfigActivity extends AppCompatActivity {
     };
 
     private void listPairedDevices(View view){
+
         mPairedDevices = mBTAdapter.getBondedDevices();
         if(mBTAdapter.isEnabled()) {
             // put it's one to the adapter
@@ -140,7 +224,10 @@ public class BluetoothConfigActivity extends AppCompatActivity {
         else
             Toast.makeText(getApplicationContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
     }
-
+    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
+        return  device.createRfcommSocketToServiceRecord(BTMODULEUUID);
+        //creates secure outgoing connection with BT device using UUID
+    }
     private AdapterView.OnItemClickListener mDeviceClickListener = new AdapterView.OnItemClickListener() {
         public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
 
@@ -164,7 +251,7 @@ public class BluetoothConfigActivity extends AppCompatActivity {
                     BluetoothDevice device = mBTAdapter.getRemoteDevice(address);
 
                     try {
-                        mBTSocket = createBluetoothSocket(device);
+                        mBTSocket = mBluetoothService.createBluetoothSocket(device);
                     } catch (IOException e) {
                         fail = true;
                         Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
@@ -184,7 +271,7 @@ public class BluetoothConfigActivity extends AppCompatActivity {
                         }
                     }
                     if(fail == false) {
-                        mConnectedThread = new MainActivity.ConnectedThread(mBTSocket);
+                        mConnectedThread = new ConnectedThread(mBTSocket);
                         mConnectedThread.start();
 
                         mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name)
@@ -194,4 +281,12 @@ public class BluetoothConfigActivity extends AppCompatActivity {
             }.start();
         }
     };
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mShouldUnbind) {
+            // Release information about the service's state.
+            unbindService(mConnection);
+            mShouldUnbind = false;
+        }
+    }
 }
