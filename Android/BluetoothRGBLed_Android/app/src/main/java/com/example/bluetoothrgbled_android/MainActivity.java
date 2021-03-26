@@ -17,6 +17,7 @@ import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -38,23 +39,23 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity {
 
     // extra name definitions
-    public static final String EXTRA_BTADAPTER = "com.example.BluetoothRGBLed.BTADAPTER";
-    public static final String EXTRA_BTSTATUS = "com.example.BluetoothRGBLed.BTSTATUS";
+    //public static final String EXTRA_BTADAPTER = "com.example.BluetoothRGBLed.BTADAPTER";
+    //public static final String EXTRA_BTSTATUS = "com.example.BluetoothRGBLed.BTSTATUS";
 
-    BluetoothService mBluetoothService;
+    BluetoothService mBluetoothService = null;
     private boolean mBound = false; // are we bound to BluetoothService?
     private boolean mShouldUnbind; // to prevent unbinding when we shouldn't
     // GUI Components
     private TextView mBluetoothStatus;
-    private TextView mReadBuffer;
-    private Button mScanBtn;
-    private Button mOffBtn;
-    private Button mListPairedDevicesBtn;
-    private Button mDiscoverBtn;
+    //private TextView mReadBuffer;
+    //private Button mScanBtn;
+    //private Button mOffBtn;
+    //private Button mListPairedDevicesBtn;
+    //private Button mDiscoverBtn;
     public BluetoothAdapter mBTAdapter;
     public Set<BluetoothDevice> mPairedDevices;
     private ArrayAdapter<String> mBTArrayAdapter;
-    private ListView mDevicesListView;
+    //private ListView mDevicesListView;
     private CheckBox mLED1;
     private Slider mRedSlider;
     private Slider mGrnSlider;
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
     private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
-    private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
+    //private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
 
 
     // #defines for identifying shared types between calling functions
@@ -72,19 +73,20 @@ public class MainActivity extends AppCompatActivity {
     public final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
     public final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
     private final static byte INSTRUCTION_SET_LED = (byte) 0b00001000;
-    private final static byte INSTRuCTION_CNF_LED = (byte) 0b10001000;
-
+    private final static byte INSTRUCTION_CNF_LED = (byte) 0b10001000;
+    // TODO add detection of BT status + detect disconnect events
+    // TODO add turn-off-all command upon destroy
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setTitle("Control LED");
         mBluetoothStatus = (TextView)findViewById(R.id.bluetoothStatus);
-        mReadBuffer = (TextView) findViewById(R.id.readBuffer);
-        mScanBtn = (Button)findViewById(R.id.scan);
-        mOffBtn = (Button)findViewById(R.id.off);
-        mDiscoverBtn = (Button)findViewById(R.id.discover);
-        mListPairedDevicesBtn = (Button)findViewById(R.id.PairedBtn);
+        //mReadBuffer = (TextView) findViewById(R.id.readBuffer);
+        //mScanBtn = (Button)findViewById(R.id.scan);
+        //mOffBtn = (Button)findViewById(R.id.off);
+        //mDiscoverBtn = (Button)findViewById(R.id.discover);
+        //mListPairedDevicesBtn = (Button)findViewById(R.id.PairedBtn);
         mLED1 = (CheckBox)findViewById(R.id.checkboxLED1);
         mRedSlider = (Slider)findViewById(R.id.redSlider);
         mGrnSlider = (Slider)findViewById(R.id.grnSlider);
@@ -93,13 +95,13 @@ public class MainActivity extends AppCompatActivity {
         mBTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
         mBTAdapter = BluetoothAdapter.getDefaultAdapter(); // get a handle on the bluetooth radio
 
-        mDevicesListView = (ListView)findViewById(R.id.devicesListView);
-        mDevicesListView.setAdapter(mBTArrayAdapter); // assign model to view
-        mDevicesListView.setOnItemClickListener(mDeviceClickListener);
+        //mDevicesListView = (ListView)findViewById(R.id.devicesListView);
+        //mDevicesListView.setAdapter(mBTArrayAdapter); // assign model to view
+        //mDevicesListView.setOnItemClickListener(mDeviceClickListener);
 
 
 
-
+/*
         mHandler = new Handler(){
             public void handleMessage(Message msg){
                 if(msg.what == MESSAGE_READ){
@@ -119,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
                         mBluetoothStatus.setText("Connection Failed");
                 }
             }
-        };
+        };*/
 
         if (mBTArrayAdapter == null) {
             // Device does not support Bluetooth
@@ -131,6 +133,7 @@ public class MainActivity extends AppCompatActivity {
             mLED1.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View v){
+                    // cast to chars b/c 2-byte integer variable type
                     char redValue = (char) mRedSlider.getValue();
                     char grnValue = (char) mGrnSlider.getValue();
                     char bluValue = (char) mBluSlider.getValue();
@@ -146,6 +149,9 @@ public class MainActivity extends AppCompatActivity {
                                     (char) 0x0000, (char) 0x0000); // turn led off
                             Toast.makeText(getApplicationContext(),"Sent low",Toast.LENGTH_SHORT).show();
                         }
+                    }
+                    else {
+                        Toast.makeText(getApplicationContext(),"No BT thread!",Toast.LENGTH_SHORT).show();
                     }
                 }
             });
@@ -153,24 +159,22 @@ public class MainActivity extends AppCompatActivity {
             mRedSlider.addOnChangeListener(new Slider.OnChangeListener() {
                 @Override
                 public void onValueChange(Slider slider, float value, boolean fromUser) {
-                    char redValue = (char) mRedSlider.getValue();
-                    char grnValue = (char) mGrnSlider.getValue();
-                    char bluValue = (char) mBluSlider.getValue();
-                    Toast.makeText(getApplicationContext(),"Got values",Toast.LENGTH_SHORT).show();
-                    if(mConnectedThread != null) {//First check to make sure thread created
-                        if ((mLED1.isChecked())) {
-                            mConnectedThread.writeIntInstruction(INSTRUCTION_SET_LED,
-                                    (char) (((redValue & 0x00FF) << 8) | (grnValue & 0x00FF)), (char) (bluValue << 8)); // set led to color
-                            Toast.makeText(getApplicationContext(),"Sent value",Toast.LENGTH_SHORT).show();
-                        }
-                        else {
-                            mConnectedThread.writeIntInstruction(INSTRUCTION_SET_LED,
-                                    (char) 0x0000, (char) 0x0000); // turn led off
-                            Toast.makeText(getApplicationContext(),"Sent low",Toast.LENGTH_SHORT).show();
-                        }
-                    }
+                    getSliderValsAndSendColor();
                 }
             });
+            mGrnSlider.addOnChangeListener(new Slider.OnChangeListener() {
+                @Override
+                public void onValueChange(Slider slider, float value, boolean fromUser) {
+                    getSliderValsAndSendColor();
+                }
+            });
+            mBluSlider.addOnChangeListener(new Slider.OnChangeListener() {
+                @Override
+                public void onValueChange(Slider slider, float value, boolean fromUser) {
+                    getSliderValsAndSendColor();
+                }
+            });
+            /*
             mScanBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -197,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onClick(View v){
                     discover(v);
                 }
-            });
+            });*/
         }
     }
 
@@ -210,6 +214,12 @@ public class MainActivity extends AppCompatActivity {
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
             mBound = true;
+            mConnectedThread = mBluetoothService.getBluetoothThread();
+            Log.d("SERVICE_CONNECTED","BT Service Connected");
+            Log.d("BIND_TEST","bind fin, mbtservice == null: "+String.valueOf(mBluetoothService == null));
+            if(mConnectedThread != null) {
+                Toast.makeText(getApplicationContext(), "in if here", Toast.LENGTH_SHORT).show();
+            }
         }
 
         @Override
@@ -235,11 +245,13 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     public void onResume() {
+
         super.onResume();
-        super.onStart();
+        Log.d("MAIN_RESUMED","Main Service Resumed");
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
         bindService(BTServiceIntent, connection, Context.BIND_AUTO_CREATE);
         mShouldUnbind = true;
+        //mBluetoothStatus.setText
     }
     protected void onDestroy() {
         super.onDestroy();
@@ -255,6 +267,21 @@ public class MainActivity extends AppCompatActivity {
         // no need to pass any bluetooth data, as it's all handled by Bluetooth Service
     }
 
+    public void getSliderValsAndSendColor() {
+        if ((mLED1.isChecked())) {
+            char redValue = (char) mRedSlider.getValue();
+            char grnValue = (char) mGrnSlider.getValue();
+            char bluValue = (char) mBluSlider.getValue();
+            //Toast.makeText(getApplicationContext(), "Got values", Toast.LENGTH_SHORT).show();
+            if (mConnectedThread != null) {//First check to make sure thread created
+                mConnectedThread.writeIntInstruction(INSTRUCTION_SET_LED,
+                        (char) (((redValue & 0x00FF) << 8) | (grnValue & 0x00FF)), (char) (bluValue << 8)); // set led to color
+                //Toast.makeText(getApplicationContext(), "Sent value", Toast.LENGTH_SHORT).show();
+                //Log.d("COLORS_SENT","Values sent: "+redValue+" "+grnValue+" "+bluValue);
+            }
+        }
+    }
+/*
     private void bluetoothOn(View view){
         if (!mBTAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -266,7 +293,7 @@ public class MainActivity extends AppCompatActivity {
         else{
             Toast.makeText(getApplicationContext(),"Bluetooth is already on", Toast.LENGTH_SHORT).show();
         }
-    }
+    }*/
 
     // Enter here after user selects "yes" or "no" to enabling radio
     @Override
@@ -284,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
                 mBluetoothStatus.setText(R.string.disabled);
         }
     }
-
+/*
     private void bluetoothOff(View view){
         mBTAdapter.disable(); // turn off
         mBluetoothStatus.setText(R.string.disabled);
@@ -308,7 +335,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
             }
         }
-    }
+    }*/
 
     final BroadcastReceiver blReceiver = new BroadcastReceiver() {
         @Override
@@ -322,7 +349,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     };
-
+/*
     private void listPairedDevices(View view){
         mPairedDevices = mBTAdapter.getBondedDevices();
         if(mBTAdapter.isEnabled()) {
@@ -334,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
         }
         else
             Toast.makeText(getApplicationContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
-    }
+    }*/
 
     private AdapterView.OnItemClickListener mDeviceClickListener = new AdapterView.OnItemClickListener() {
         public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {

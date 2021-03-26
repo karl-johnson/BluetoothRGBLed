@@ -15,6 +15,14 @@ public class ConnectedThread extends Thread {
     private final InputStream mmInStream;
     private final OutputStream mmOutStream;
 
+    // TODO: MAJOR! move communication critical info to shared file between arduino and android
+    private final static byte START_BYTE = 0b00000000; // just null
+    private final static int MESSAGE_LENGTH = 6;
+
+    private boolean messageInProgress = false; // keep track of whether message is in progress
+    private int byteIndex = 0; // keep track of location in message
+    private byte[] saveArray;
+
     public ConnectedThread(BluetoothSocket socket) {
         mmSocket = socket;
         InputStream tmpIn = null;
@@ -37,19 +45,67 @@ public class ConnectedThread extends Thread {
         // Keep listening to the InputStream until an exception occurs
         while (true) {
             try {
+                // new code
+                // look for start character, start string once get, end string once right length
+
+                while(mmInStream.available() > 0) {
+                    byte inByte = (byte) mmInStream.read();
+                    if(messageInProgress) {
+                        saveArray[byteIndex] = inByte; // add byte to array
+                        byteIndex++;
+                        if(byteIndex == MESSAGE_LENGTH) {
+                            // if our read data is now the length of a message
+                            // decode instruction
+                            ArduinoInstruction newInstruction = new ArduinoInstruction();
+                            newInstruction.convertBytesToInstruction(saveArray);
+                            // TODO: catch exceptions from this
+                            // TODO: send result to main activity via handler
+                            byteIndex = 0; // overwrite old message
+                            messageInProgress = false; // message is over
+                        }
+                    }
+                    else if(inByte == START_BYTE) {
+                        // start message after start byte; don't need to include this in array
+                        messageInProgress = true;
+                    }
+                }
+                /* Cpp code
+                      while (serialDevice->available()) {
+                        byte inByte = serialDevice->read();
+                        if(messageInProgress) {
+                          Serial.print(inByte, HEX);
+                          Serial.print(" ");
+                          saveArray[byteIndex] = inByte; // add byte to array
+                          byteIndex++;
+                          if(byteIndex == MESSAGE_LENGTH) {
+                            // if our read data is now the length of a message
+                            *readyFlag = true;
+                            byteIndex = 0; // overwrite old message - kinda dangerous
+                            messageInProgress = false; // message is over
+                          }
+                        }
+                        else if(inByte == START_BYTE) {
+                          // start message after start byte; don't need to include this in array
+                          messageInProgress = true;
+                        }
+                        // if we're not in a message or at the start of one, discard byte
+                      }
+
+                     */
+                /*
+                //old code
                 // Read from the InputStream
                 bytes = mmInStream.available();
                 if(bytes != 0) {
-                    // TODO: more robust receiving - we have a fixed message length for fucks sake!
+                    // code copied from Arduino
                     SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
                     bytes = mmInStream.available(); // how many bytes are ready to be read?
                     bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
                     mHandlerIn.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
                             .sendToTarget(); // Send the obtained bytes to the UI activity
-                }
+                }*/
             } catch (IOException e) {
                 e.printStackTrace();
-
                 break;
             }
         }
@@ -64,6 +120,8 @@ public class ConnectedThread extends Thread {
     }
 
     public void writeIntInstruction(byte instructionByte, char value1, char value2) {
+        // TODO: deprecate
+        // NOTE: improper use of chars because best equivalent to 2-byte ints in Arduino
         // this assumes Java and the Arduino have same endianness, which is a mighty assumption
         byte[] value1bytes = {(byte) (value1 >> 8), (byte) value1};
         byte[] value2bytes = {(byte) (value2 >> 8), (byte) value2};
@@ -79,6 +137,15 @@ public class ConnectedThread extends Thread {
             mmOutStream.write(value2bytes);
             mmOutStream.write(xorSignature);
         } catch (IOException e) { }
+    }
+
+    public void writeArduinoInstruction(ArduinoInstruction inputInstruction) {
+        byte[] sendBytes = inputInstruction.convertInstructionToBytes();
+        try {
+            mmOutStream.write(sendBytes);
+        } catch (IOException e) {
+            // TODO: handle exception
+        }
     }
 
     /* Call this from the main activity to shutdown the connection */

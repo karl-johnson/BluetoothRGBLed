@@ -19,6 +19,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,6 +40,7 @@ public class BluetoothConfigActivity extends AppCompatActivity {
     private Button mOffBtn;
     private Button mListPairedDevicesBtn;
     private Button mDiscoverBtn;
+    private ListView mDevicesListView;
     private ArrayAdapter<String> mBTArrayAdapter;
     public Set<BluetoothDevice> mPairedDevices;
     private Handler mHandler; // Our main handler that will receive callback notifications
@@ -52,6 +54,8 @@ public class BluetoothConfigActivity extends AppCompatActivity {
 
     BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,7 +68,13 @@ public class BluetoothConfigActivity extends AppCompatActivity {
         mOffBtn = (Button)findViewById(R.id.off);
         mDiscoverBtn = (Button)findViewById(R.id.discover);
         mListPairedDevicesBtn = (Button)findViewById(R.id.PairedBtn);
+
         mBTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
+
+        mDevicesListView = (ListView)findViewById(R.id.devicesListView);
+        mDevicesListView.setAdapter(mBTArrayAdapter); // assign model to view
+        mDevicesListView.setOnItemClickListener(mDeviceClickListener);
+
         mHandler = new Handler(){
             public void handleMessage(Message msg){
                 if(msg.what == MESSAGE_READ){
@@ -135,13 +145,9 @@ public class BluetoothConfigActivity extends AppCompatActivity {
     };
 
     public void onStart() {
-
         super.onStart();
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
         getApplicationContext().bindService(BTServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
-
-        // TODO: debug by checking if this is working right
-        //Toast.makeText(this, "set bind bool", Toast.LENGTH_SHORT).show();
         mShouldUnbind = true;
     }
     private void bluetoothOn(View view){
@@ -214,12 +220,13 @@ public class BluetoothConfigActivity extends AppCompatActivity {
     private void listPairedDevices(View view){
 
         mPairedDevices = mBTAdapter.getBondedDevices();
+        //Toast.makeText(this,String.valueOf(mPairedDevices.size()),Toast.LENGTH_LONG).show();
         if(mBTAdapter.isEnabled()) {
             // put it's one to the adapter
             for (BluetoothDevice device : mPairedDevices)
                 mBTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
 
-            Toast.makeText(getApplicationContext(), "Show Paired Devices", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Show "+String.valueOf(mPairedDevices.size())+" Paired Devices", Toast.LENGTH_SHORT).show();
         }
         else
             Toast.makeText(getApplicationContext(), "Bluetooth not on", Toast.LENGTH_SHORT).show();
@@ -271,9 +278,10 @@ public class BluetoothConfigActivity extends AppCompatActivity {
                         }
                     }
                     if(fail == false) {
-                        mConnectedThread = new ConnectedThread(mBTSocket);
-                        mConnectedThread.start();
-
+                        mConnectedThread = mBluetoothService.createBluetoothThread();
+                        if(mConnectedThread == null) {
+                            Toast.makeText(getBaseContext(), "Thread creation failed", Toast.LENGTH_SHORT).show();
+                        }
                         mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name)
                                 .sendToTarget();
                     }
@@ -285,7 +293,7 @@ public class BluetoothConfigActivity extends AppCompatActivity {
         super.onDestroy();
         if (mShouldUnbind) {
             // Release information about the service's state.
-            unbindService(mConnection);
+            getApplicationContext().unbindService(mConnection);
             mShouldUnbind = false;
         }
     }
