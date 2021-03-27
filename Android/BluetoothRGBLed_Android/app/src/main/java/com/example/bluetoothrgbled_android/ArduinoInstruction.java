@@ -1,35 +1,27 @@
 package com.example.bluetoothrgbled_android;
 
 public class ArduinoInstruction {
-    public byte InstructionValue;
-    public boolean IsFloatInstruction;
-    public char intValue1;
-    public char intValue2;
-    public float floatValue;
+    public byte InstructionValue = 0x00;
+    public boolean IsFloatInstruction = false;
+    public char intValue1 = 0;
+    public char intValue2 = 0;
+    public float floatValue = 0;
 
 
 
     public final static byte START_BYTE = 0b00000000; // just null
     public final static int MESSAGE_LENGTH = 6;
 
-
-    public ArduinoInstruction() {
-
-    }
-    public void convertBytesToInstruction(byte[] inBytes) {
+    public void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, MessageLengthException {
         // TODO check for length
-        /*
-        if(inBytes.size != MESSAGE_LENGTH) {
-            throw exception
+
+        if(inBytes.length != MESSAGE_LENGTH) {
+            throw new MessageLengthException(String.valueOf(inBytes.length));
         }
-         */
-        // TODO check XOR and throw corrupted instruction exception
-        /*
         if(XORByteArray(inBytes) != 0) {
             // we have a corrupted instruction
-            throw exception
+            throw new CorruptedInstructionException("Got Corrupted Instruction");
         }
-         */
         InstructionValue = inBytes[0];
         // hard-coded nature of our comm protocol: LSB 1 for float instruction
         IsFloatInstruction = (InstructionValue & (byte) 0x01) == 1;
@@ -47,23 +39,26 @@ public class ArduinoInstruction {
         }
     }
     public byte[] convertInstructionToBytes() {
-        byte[] internalBytes = new byte[MESSAGE_LENGTH]; // should be initialized to 0
-        internalBytes[0] = InstructionValue;
-        // TODO add some checks for uninitialized things
+
+        byte[] internalBytes = new byte[MESSAGE_LENGTH+1]; // should be initialized to 0
+        // length MESSAGE_LENGTH + 1 b/c start byte
+        internalBytes[0] = 0x00;
+        internalBytes[1] = InstructionValue;
+
         if(IsFloatInstruction) {
             int intBits =  Float.floatToIntBits(floatValue);
-            internalBytes[1] = (byte) (intBits >> 24);
-            internalBytes[2] = (byte) (intBits >> 16);
-            internalBytes[3] = (byte) (intBits >> 8);
-            internalBytes[4] = (byte) (intBits);
+            internalBytes[2] = (byte) (intBits >> 24);
+            internalBytes[3] = (byte) (intBits >> 16);
+            internalBytes[4] = (byte) (intBits >> 8);
+            internalBytes[5] = (byte) (intBits);
             }
         else {
-            internalBytes[1] = (byte) (intValue1 >> 8);
-            internalBytes[2] = (byte) (intValue1);
-            internalBytes[3] = (byte) (intValue2 >> 8);
-            internalBytes[4] = (byte) (intValue2);
+            internalBytes[2] = (byte) (intValue1 >> 8);
+            internalBytes[3] = (byte) (intValue1);
+            internalBytes[4] = (byte) (intValue2 >> 8);
+            internalBytes[5] = (byte) (intValue2);
         }
-        internalBytes[5] = XORByteArray(internalBytes); // index 5 is 0 prior to this so OK
+        internalBytes[6] = XORByteArray(internalBytes); // index 5 is 0 prior to this so OK
         return internalBytes;
     }
 
@@ -74,5 +69,16 @@ public class ArduinoInstruction {
             xorResult = (byte) (xorResult ^ input[xorIndex]);
         }
         return xorResult;
+    }
+
+    public class CorruptedInstructionException extends Exception {
+        public CorruptedInstructionException(String message) {
+            super(message);
+        }
+    }
+    public class MessageLengthException extends Exception {
+        public MessageLengthException(String message) {
+            super(message);
+        }
     }
 }

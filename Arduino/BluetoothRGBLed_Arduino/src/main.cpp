@@ -30,6 +30,7 @@ void loop() {
   updateRx(&bluetooth, inputByteArray, &inputReadyFlag);
   if(inputReadyFlag) {
     inputReadyFlag = false;
+
     // we got a message! let's decode it.
     int returnVal = instDecode(inputByteArray, &latestInstruction);
     if(returnVal == 2) {
@@ -47,15 +48,15 @@ void loop() {
         // third byte is blue
         // normally use int function to extract data, but 0-255 values
         // are better handled like this (rare exception)
-        Serial.println(inputByteArray[1]);
-        Serial.println(inputByteArray[2]);
-        Serial.println(inputByteArray[3]);
+        ///Serial.println((int)inputByteArray[1]);
+        //Serial.println((int)inputByteArray[2]);
+        //Serial.println((int)inputByteArray[3]);
         analogWrite(RED_PIN, inputByteArray[1]);
         analogWrite(GRN_PIN, inputByteArray[2]);
 
         analogWrite(BLU_PIN, inputByteArray[3]);
-        /*encodeAndSendInts(bluetooth, INST_CNF_LED, latestInstruction.intValue1,
-           latestInstruction.intValue2, sentMessageHistory);*/
+        encodeAndSendInts(&bluetooth, INST_CNF_LED, latestInstruction.intValue1,
+           latestInstruction.intValue2, sentMessageHistory);
         break;
       default:
         Serial.println("Nano: Unknown instruction!");

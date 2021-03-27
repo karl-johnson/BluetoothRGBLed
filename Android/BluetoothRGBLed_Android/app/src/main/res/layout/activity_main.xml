@@ -93,6 +93,17 @@
                 android:layout_centerHorizontal="true" />
         </LinearLayout>
 -->
+        <TextView
+            android:id="@+id/feedbackTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:gravity="center"
+            android:text="Color Back From Arduino"
+            android:textColor="#808080"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"

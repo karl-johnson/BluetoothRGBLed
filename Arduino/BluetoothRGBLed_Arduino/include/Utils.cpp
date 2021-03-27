@@ -4,9 +4,18 @@
 #include "Utils.h"
 void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
   // designed not to require global vars
-  // add timeout functionality?
+  // add timeout functionality? DOING NOW!
   static bool messageInProgress = false;
   static int byteIndex = 0;
+  static unsigned long messageStartMs = 0;
+  if(messageInProgress) {
+    if(millis() > messageStartMs + MESSAGE_TIMEOUT_DURATION) {
+      // it's been too long since the message started - give up!
+      byteIndex = 0;
+      messageInProgress = false;
+      Serial.println("Message Timeout");
+    }
+  }
   while (serialDevice->available()) {
     byte inByte = serialDevice->read();
     if(messageInProgress) {
@@ -23,7 +32,9 @@ void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
     }
     else if(inByte == START_BYTE) {
       // start message after start byte; don't need to include this in array
+      // test test
       messageInProgress = true;
+      messageStartMs = millis();
     }
     // if we're not in a message or at the start of one, discard byte
   }
