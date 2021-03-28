@@ -66,8 +66,8 @@ public class MainActivity extends AppCompatActivity {
     private Slider mGrnSlider;
     private Slider mBluSlider;
     private TextView mColorFeedback;
-    private Handler mHandler; // Our main handler that will receive callback notifications
-    private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
+    public Handler mHandler; // Our main handler that will receive callback notifications
+    //private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
     //private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
@@ -114,12 +114,13 @@ public class MainActivity extends AppCompatActivity {
                 switch(msg.what) {
                     case NEW_INSTRUCTION_IN:
                         handleInstructionFromArduino((ArduinoInstruction) msg.obj);
+                        //Log.d("MAIN_ACT_INSTR_REC", "Main activity got instruction handler.");
                         break;
                     case NEW_INSTRUCTION_CORRUPTED:
                         Toast.makeText(getApplicationContext(),"Got corrupted instruction!",Toast.LENGTH_LONG).show();
                         break;
                 }
-                /*
+/*
                 if(msg.what == MESSAGE_READ){
                     String readMessage = null;
                     try {
@@ -187,13 +188,22 @@ public class MainActivity extends AppCompatActivity {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
             BluetoothService.LocalBinder binder = (BluetoothService.LocalBinder) service;
             mBluetoothService = binder.getService();
+            // not super clean, but simply pass handler to BT service to get data from thread within
+            mBluetoothService.setHandler(mHandler);
             mBound = true;
-            mConnectedThread = mBluetoothService.getBluetoothThread();
+            //mConnectedThread = mBluetoothService.getBluetoothThread();
             Log.d("SERVICE_CONNECTED","BT Service Connected");
-            Log.d("BIND_TEST","bind fin, mbtservice == null: "+String.valueOf(mBluetoothService == null));
-            if(mConnectedThread != null) {
-                Toast.makeText(getApplicationContext(), "in if here", Toast.LENGTH_SHORT).show();
-            }
+            Log.d("BIND_TEST","bind fin, mbtservice != null: "+String.valueOf(mBluetoothService != null));
+            /*if(mConnectedThread != null) {
+
+                if(mConnectedThread.isAlive()) {
+                    Log.d("BT_THREAD_CONNECTED","BT Thread Connected");
+                }
+                else{
+                    //mConnectedThread.start();
+                    Log.d("BT_THREAD_ALIVE","BT Thread now NOT Alive!");
+                }
+            }*/
         }
 
         @Override
@@ -219,7 +229,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     public void onResume() {
-
         super.onResume();
         Log.d("MAIN_RESUMED","Main Service Resumed");
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
@@ -249,19 +258,20 @@ public class MainActivity extends AppCompatActivity {
         ArduinoInstruction sendInstruction = new ArduinoInstruction();
         sendInstruction.InstructionValue = INSTRUCTION_SET_LED;
         sendInstruction.IsFloatInstruction = false;
+        sendInstruction.IsFloatInstruction = false;
         sendInstruction.intValue1 = (char) (((redValue & 0x00FF) << 8) | (grnValue & 0x00FF));
         sendInstruction.intValue2 = (char) (bluValue << 8);
 
         //Toast.makeText(getApplicationContext(), "Got values", Toast.LENGTH_SHORT).show();
-        if (mConnectedThread != null) {//First check to make sure thread created
+        //if (mConnectedThread != null) {//First check to make sure thread created
             //mConnectedThread.writeIntInstruction(INSTRUCTION_SET_LED, (char) (((redValue & 0x00FF) << 8) | (grnValue & 0x00FF)), (char) (bluValue << 8)); // set led to color
-            mConnectedThread.writeArduinoInstruction(sendInstruction);
+            mBluetoothService.sendInstructionViaThread(sendInstruction);
             //Toast.makeText(getApplicationContext(), "Sent value", Toast.LENGTH_SHORT).show();
             Log.d("COLORS_SENT","Values sent: "+String.valueOf((int)redValue)+" "+String.valueOf((int)grnValue)+" "+String.valueOf((int)bluValue));
-        }
-        else {
-            Toast.makeText(getApplicationContext(),"No BT thread!",Toast.LENGTH_SHORT).show();
-        }
+        //}
+        //else {
+        //    Toast.makeText(getApplicationContext(),"No BT thread!",Toast.LENGTH_SHORT).show();
+        //}
     }
     private void handleInstructionFromArduino(ArduinoInstruction instructionIn) {
         Log.d("HEARD_INSTRUCTION","Instruction about to be handled");
@@ -270,9 +280,14 @@ public class MainActivity extends AppCompatActivity {
         switch(instructionIn.InstructionValue) {
             case INSTRUCTION_CNF_LED:
                 // set a color
-                byte red = (byte) ((instructionIn.intValue1) >> 8);
-                byte grn = (byte) ((instructionIn.intValue1));
-                byte blu = (byte) ((instructionIn.intValue2) >> 8);
+                Toast.makeText(getApplicationContext(), "Got response.", Toast.LENGTH_SHORT).show();
+                mColorFeedback.setText("TEST!");
+/*
+                int red = ((instructionIn.intValue1) >> 8);
+                int grn = ((instructionIn.intValue1) & 0x00FF);
+                int blu = ((instructionIn.intValue2) >> 8);
+                Log.d("HEARD_INSTRUCTION_COLOR",String.valueOf(red)+" "+String.valueOf(grn)+" "+String.valueOf(blu));
+                mColorFeedback.setText(String.valueOf(red)+" "+String.valueOf(grn)+" "+String.valueOf(blu));
                 mColorFeedback.setBackgroundColor(Color.rgb(red,grn,blu));
                 // estimate luminance to change text color
                 if((red+red+blu+grn+grn+grn)/6 > 128) {
@@ -281,7 +296,7 @@ public class MainActivity extends AppCompatActivity {
                 else {
                     mColorFeedback.setTextColor(Color.WHITE);
                 }
-                break;
+                break;*/
             default:
                 Toast.makeText(getApplicationContext(), "Unknown Instruction", Toast.LENGTH_SHORT).show();
         }

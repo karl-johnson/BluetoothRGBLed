@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -254,9 +255,7 @@ public class BluetoothConfigActivity extends AppCompatActivity {
             {
                 public void run() {
                     boolean fail = false;
-
                     BluetoothDevice device = mBTAdapter.getRemoteDevice(address);
-
                     try {
                         mBTSocket = mBluetoothService.createBluetoothSocket(device);
                     } catch (IOException e) {
@@ -270,20 +269,22 @@ public class BluetoothConfigActivity extends AppCompatActivity {
                         try {
                             fail = true;
                             mBTSocket.close();
-                            mHandler.obtainMessage(CONNECTING_STATUS, -1, -1)
-                                    .sendToTarget();
+                            mHandler.obtainMessage(CONNECTING_STATUS, -1, -1).sendToTarget();
                         } catch (IOException e2) {
                             //insert code to deal with this
                             Toast.makeText(getBaseContext(), "Socket creation failed", Toast.LENGTH_SHORT).show();
                         }
                     }
-                    if(fail == false) {
-                        mConnectedThread = mBluetoothService.createBluetoothThread();
+                    if(!fail) {
+                        try {
+                            mConnectedThread = mBluetoothService.createBluetoothThread();
+                        } catch (IOException e3) {
+                            Log.e("THREAD_CREATION_FAILED",e3.getMessage());
+                        }
                         if(mConnectedThread == null) {
                             Toast.makeText(getBaseContext(), "Thread creation failed", Toast.LENGTH_SHORT).show();
                         }
-                        mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name)
-                                .sendToTarget();
+                        mHandler.obtainMessage(CONNECTING_STATUS, 1, -1, name).sendToTarget();
                     }
                 }
             }.start();

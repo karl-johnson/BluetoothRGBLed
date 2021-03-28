@@ -1,5 +1,7 @@
 package com.example.bluetoothrgbled_android;
 
+import java.io.IOException;
+
 public class ArduinoInstruction {
     public byte InstructionValue = 0x00;
     public boolean IsFloatInstruction = false;
@@ -12,11 +14,11 @@ public class ArduinoInstruction {
     public final static byte START_BYTE = 0b00000000; // just null
     public final static int MESSAGE_LENGTH = 6;
 
-    public void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, MessageLengthException {
+    public void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, IOException {
         // TODO check for length
 
         if(inBytes.length != MESSAGE_LENGTH) {
-            throw new MessageLengthException(String.valueOf(inBytes.length));
+            throw new IOException("Wrong message length: "+String.valueOf(inBytes.length));
         }
         if(XORByteArray(inBytes) != 0) {
             // we have a corrupted instruction

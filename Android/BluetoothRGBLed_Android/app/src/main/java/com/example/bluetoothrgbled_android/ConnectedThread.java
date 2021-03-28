@@ -20,6 +20,7 @@ public class ConnectedThread extends Thread {
     public final static int NEW_INSTRUCTION_CORRUPTED = 2; // used in bluetooth handler to identify message update
 
     private final BluetoothSocket mmSocket;
+    private final Handler mmHandler;
     private final InputStream mmInStream;
     private final OutputStream mmOutStream;
 
@@ -31,8 +32,9 @@ public class ConnectedThread extends Thread {
     private int byteIndex = 0; // keep track of location in message
     private byte[] saveArray = new byte[MESSAGE_LENGTH];
 
-    public ConnectedThread(BluetoothSocket socket) {
+    public ConnectedThread(BluetoothSocket socket, Handler mHandlerIn) {
         mmSocket = socket;
+        mmHandler = mHandlerIn;
         InputStream tmpIn = null;
         OutputStream tmpOut = null;
 
@@ -47,7 +49,7 @@ public class ConnectedThread extends Thread {
         mmOutStream = tmpOut;
     }
 
-    public void run(Handler mHandlerIn) {
+    public void run() {
         //byte[] buffer = new byte[1024];  // buffer store for the stream
         //int bytes; // bytes returned from read()
         // Keep listening to the InputStream until an exception occurs
@@ -55,7 +57,6 @@ public class ConnectedThread extends Thread {
             try {
                 // new code
                 // look for start character, start string once get, end string once right length
-
                 while(mmInStream.available() > 0) {
                     Log.d("BYTE","byte from Arduino");
                     byte inByte = (byte) mmInStream.read();
@@ -63,20 +64,18 @@ public class ConnectedThread extends Thread {
                         saveArray[byteIndex] = inByte; // add byte to array
                         byteIndex++;
                         if(byteIndex == MESSAGE_LENGTH) {
-                            Log.d("MESSAGE_COMPLETE","Got to Message Completion");
+                            //Log.d("MESSAGE_COMPLETE","Got to Message Completion");
                             // if our read data is now the length of a message
                             // decode instruction
                             ArduinoInstruction newInstruction = new ArduinoInstruction();
                             try {
                                 newInstruction.convertBytesToInstruction(saveArray);
-                                // TODO: send result to main activity via handler
-                                mHandlerIn.obtainMessage(NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
-                                Log.d("Sent","Got to Message Completion");
+                                mmHandler.obtainMessage(NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
+                                Log.d("SENT","Sent instruction handler");
                             } catch (ArduinoInstruction.CorruptedInstructionException e) {
-                                // TODO: tell handler that we got a corrupted instruction
-                                mHandlerIn.obtainMessage(NEW_INSTRUCTION_CORRUPTED).sendToTarget();
-                            } catch (ArduinoInstruction.MessageLengthException e) {
-                                Log.e("BAD_ENC_MESSAGE_LENGTH","Bad Message Length");
+                                mmHandler.obtainMessage(NEW_INSTRUCTION_CORRUPTED).sendToTarget();
+                            } catch (IOException e2) {
+                                Log.e("BAD_ENC_MESSAGE_LENGTH",e2.getMessage());
                             }
                             byteIndex = 0; // overwrite old message
                             messageInProgress = false; // message is over
@@ -106,6 +105,7 @@ public class ConnectedThread extends Thread {
     }
 
     /* Call this from the main activity to send data to the remote device */
+    /*
     public void write(String input) {
         byte[] bytes = input.getBytes();           //converts entered String into bytes
         try {
@@ -132,7 +132,7 @@ public class ConnectedThread extends Thread {
             mmOutStream.write(xorSignature);
         } catch (IOException e) { }
     }
-
+*/
     public void writeArduinoInstruction(ArduinoInstruction inputInstruction) {
         //Log.d("SENDING_INSTRUCTION", "Attempting to write instruction bytes");
         byte[] sendBytes = inputInstruction.convertInstructionToBytes();
