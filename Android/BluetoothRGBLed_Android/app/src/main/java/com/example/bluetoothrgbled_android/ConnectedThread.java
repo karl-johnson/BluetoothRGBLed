@@ -58,7 +58,7 @@ public class ConnectedThread extends Thread {
                 // new code
                 // look for start character, start string once get, end string once right length
                 while(mmInStream.available() > 0) {
-                    Log.d("BYTE","byte from Arduino");
+                    //Log.d("BYTE","byte from Arduino");
                     byte inByte = (byte) mmInStream.read();
                     if(messageInProgress) {
                         saveArray[byteIndex] = inByte; // add byte to array

@@ -1,0 +1,37 @@
+# YAML for storing any data that is essential to be constant across devices
+# this YAML is then converted
+# instruction codes are most essential
+# all instructions are designed for Android prompt and Arduino response, so
+# the yaml is structured to group these pairs together under a common name
+# this common name only exists in this yaml and has no other significance
+# android_string and arduino_string show up in respective codebases
+# (as symbolic constants in c++ or ___ in Java) but NOT in actual comms!
+# all byte values written in direct binary for clarity;
+# hex would work, but binary allows easy confirmation of MSB/LSB significance
+
+# TODO - add instruction conflict checks in parser script
+
+# other notes about instruction protocol:
+# arduino-sent instructions always have MSB 0, android have 1
+# 4 bytes available in message; good for two int16's or one single-prec float
+# dual int instructions always have LSB 0, floats have 1
+---
+  instructions:
+    -led_color:
+      # tell arduino to set RGB led to the color contained in two ints:
+      # int1 = (red << 8) & (grn)
+      # int2 = (blu << 8)
+      # color values are exactly 1 byte; th
+      android_string: "INST_SET_LED" # android prompt instruction name
+      arduino_code: "0b10001000" # instruction byte value of response
+      arduino_string: "INST_CNF_LED" # arduino response instruction name
+      arduino_code: "0b00001000" # instruction byte value of response
+    -stop_all:
+      android_string: "INST_STOP_ALL" # stop everything!
+      arduino_code: "0b11111110"
+      arduino_string: "INST_STPD_ALL" # ok, I stopped everything!
+      arduino_code: "0b01111110"
+  # don't intend on changing start byte, but it's essential and common so...
+  start_byte:
+    string: "START_BYTE"
+    code: "0b00000000"

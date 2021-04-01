@@ -1,6 +1,7 @@
 package com.example.bluetoothrgbled_android;
 
 import java.io.IOException;
+import com.example.bluetoothrgbled_android.InstructionConstants;
 
 public class ArduinoInstruction {
     public byte InstructionValue = 0x00;
@@ -11,13 +12,13 @@ public class ArduinoInstruction {
 
 
 
-    public final static byte START_BYTE = 0b00000000; // just null
-    public final static int MESSAGE_LENGTH = 6;
+    //public final static byte START_BYTE = 0b00000000; // just null
+   //public final static int MESSAGE_LENGTH = 6;
 
     public void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, IOException {
         // TODO check for length
 
-        if(inBytes.length != MESSAGE_LENGTH) {
+        if(inBytes.length != InstructionConstants.MESSAGE_LENGTH) {
             throw new IOException("Wrong message length: "+String.valueOf(inBytes.length));
         }
         if(XORByteArray(inBytes) != 0) {
@@ -42,7 +43,7 @@ public class ArduinoInstruction {
     }
     public byte[] convertInstructionToBytes() {
 
-        byte[] internalBytes = new byte[MESSAGE_LENGTH+1]; // should be initialized to 0
+        byte[] internalBytes = new byte[InstructionConstants.MESSAGE_LENGTH+1]; // should be initialized to 0
         // length MESSAGE_LENGTH + 1 b/c start byte
         internalBytes[0] = 0x00;
         internalBytes[1] = InstructionValue;

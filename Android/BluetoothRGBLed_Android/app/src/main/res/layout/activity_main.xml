@@ -139,74 +139,86 @@
             android:layout_toLeftOf="@+id/off"
             android:onClick="onBluetoothPress"
             android:text="Bluetooth Settings" />
-<!--
-        <LinearLayout
-            android:layout_width="match_parent"
+
+        <io.github.controlwear.virtual.joystick.android.JoystickView
+            android:id="@+id/hueJoystick"
+            android:layout_width="300dp"
             android:layout_height="wrap_content"
-            android:gravity="top"
-            android:orientation="horizontal">
+            android:layout_gravity="center_horizontal|top"
+            android:layout_marginTop="0dp"
+            android:background="@drawable/joystickbackground"
+            app:JV_buttonColor="#80FFFFFF"
+            app:JV_enabled="true"
+            app:JV_fixedCenter="false" />
 
-            <Button
-                android:id="@+id/off"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_marginRight="4dp"
-                android:layout_height="wrap_content"
-                android:layout_alignBottom="@+id/scan"
-                android:layout_toEndOf="@+id/PairedBtn"
-                android:layout_toRightOf="@+id/PairedBtn"
-                android:text="Bluetooth OFF" />
 
-            <Button
-                android:id="@+id/scan"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_marginLeft="4dp"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_toStartOf="@+id/off"
-                android:layout_toLeftOf="@+id/off"
-                android:text="Bluetooth ON" />
-        </LinearLayout>
+        <!--
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:orientation="horizontal">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="top"
-            android:orientation="horizontal">
+                    <Button
+                        android:id="@+id/off"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginRight="4dp"
+                        android:layout_height="wrap_content"
+                        android:layout_alignBottom="@+id/scan"
+                        android:layout_toEndOf="@+id/PairedBtn"
+                        android:layout_toRightOf="@+id/PairedBtn"
+                        android:text="Bluetooth OFF" />
 
-            <Button
-                android:id="@+id/PairedBtn"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_marginRight="4dp"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/scan"
-                android:layout_toStartOf="@+id/discover"
-                android:layout_toLeftOf="@+id/discover"
-                android:text="Show paired Devices" />
+                    <Button
+                        android:id="@+id/scan"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="4dp"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@+id/off"
+                        android:layout_toLeftOf="@+id/off"
+                        android:text="Bluetooth ON" />
+                </LinearLayout>
 
-            <Button
-                android:id="@+id/discover"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_marginLeft="4dp"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/off"
-                android:layout_toEndOf="@+id/checkboxLED1"
-                android:layout_toRightOf="@+id/checkboxLED1"
-                android:text="Discover New Devices" />
-        </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:orientation="horizontal">
 
-        <ListView
-            android:id="@+id/devicesListView"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_below="@+id/PairedBtn"
-            android:layout_alignEnd="@+id/off"
-            android:layout_alignRight="@+id/off"
-            android:choiceMode="singleChoice" />
--->
+                    <Button
+                        android:id="@+id/PairedBtn"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginRight="4dp"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@+id/scan"
+                        android:layout_toStartOf="@+id/discover"
+                        android:layout_toLeftOf="@+id/discover"
+                        android:text="Show paired Devices" />
+
+                    <Button
+                        android:id="@+id/discover"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="4dp"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@+id/off"
+                        android:layout_toEndOf="@+id/checkboxLED1"
+                        android:layout_toRightOf="@+id/checkboxLED1"
+                        android:text="Discover New Devices" />
+                </LinearLayout>
+
+                <ListView
+                    android:id="@+id/devicesListView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_below="@+id/PairedBtn"
+                    android:layout_alignEnd="@+id/off"
+                    android:layout_alignRight="@+id/off"
+                    android:choiceMode="singleChoice" />
+        -->
     </LinearLayout>
-
 </RelativeLayout>

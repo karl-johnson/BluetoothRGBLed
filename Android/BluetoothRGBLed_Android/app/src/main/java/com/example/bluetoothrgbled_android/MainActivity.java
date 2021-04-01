@@ -36,6 +36,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Set;
 import java.util.UUID;
+import io.github.controlwear.virtual.joystick.android.JoystickView;
 
 import static com.example.bluetoothrgbled_android.ConnectedThread.NEW_INSTRUCTION_IN;
 import static com.example.bluetoothrgbled_android.ConnectedThread.NEW_INSTRUCTION_CORRUPTED;
@@ -79,8 +80,8 @@ public class MainActivity extends AppCompatActivity {
     //public final static int CONNECTING_STATUS = 3; // used in bluetooth handler to identify message status
 
 
-    private final static byte INSTRUCTION_SET_LED = (byte) 0b00001000;
-    private final static byte INSTRUCTION_CNF_LED = (byte) 0b10001000;
+    //private final static byte INSTRUCTION_SET_LED = (byte) 0b00001000;
+    //private final static byte INSTRUCTION_CNF_LED = (byte) 0b10001000;
     // TODO add detection of BT status + detect disconnect events
     // TODO add turn-off-all command upon destroy
     @Override
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
         mColorFeedback = (TextView)findViewById(R.id.feedbackTextView);
         mBTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
         mBTAdapter = BluetoothAdapter.getDefaultAdapter(); // get a handle on the bluetooth radio
-
+        JoystickView mJoystick = (JoystickView)findViewById(R.id.hueJoystick);
         //mDevicesListView = (ListView)findViewById(R.id.devicesListView);
         //mDevicesListView.setAdapter(mBTArrayAdapter); // assign model to view
         //mDevicesListView.setOnItemClickListener(mDeviceClickListener);
@@ -113,6 +114,8 @@ public class MainActivity extends AppCompatActivity {
             public void handleMessage(Message msg){
                 switch(msg.what) {
                     case NEW_INSTRUCTION_IN:
+                        mColorFeedback.setText("Test");
+                        mBluetoothStatus.setText("Test");
                         handleInstructionFromArduino((ArduinoInstruction) msg.obj);
                         //Log.d("MAIN_ACT_INSTR_REC", "Main activity got instruction handler.");
                         break;
@@ -177,6 +180,15 @@ public class MainActivity extends AppCompatActivity {
                     sendColorIfChecked((char) mRedSlider.getValue(),(char) mGrnSlider.getValue(),(char) mBluSlider.getValue());
                 }
             });
+            mJoystick.setOnMoveListener(new JoystickView.OnMoveListener() {
+                @Override
+                public void onMove(int angle, int strength) {
+                    float[] hsv = {angle,1,strength};
+                    int newColor = Color.HSVToColor(hsv);
+                    Log.d("JOYSTICK_VALUE",String.format("0x%08X", newColor));
+                    sendColorIfChecked((char) ((newColor>>16) & 0xFF),(char) ((newColor>>8) & 0xFF),(char) ((newColor) & 0xFF));
+                }
+            }, 100);
         }
     }
 
@@ -256,7 +268,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void sendColor(char redValue, char grnValue, char bluValue) {
         ArduinoInstruction sendInstruction = new ArduinoInstruction();
-        sendInstruction.InstructionValue = INSTRUCTION_SET_LED;
+        sendInstruction.InstructionValue = InstructionConstants.INSTRUCTION_SET_LED;
         sendInstruction.IsFloatInstruction = false;
         sendInstruction.IsFloatInstruction = false;
         sendInstruction.intValue1 = (char) (((redValue & 0x00FF) << 8) | (grnValue & 0x00FF));
@@ -278,14 +290,16 @@ public class MainActivity extends AppCompatActivity {
         // this is where we decide what each instruction from the Arduino should do
         // how to handle ask-and-respond instructions?
         switch(instructionIn.InstructionValue) {
-            case INSTRUCTION_CNF_LED:
+            case InstructionConstants.INSTRUCTION_CNF_LED:
                 // set a color
-                Toast.makeText(getApplicationContext(), "Got response.", Toast.LENGTH_SHORT).show();
-                mColorFeedback.setText("TEST!");
-/*
                 int red = ((instructionIn.intValue1) >> 8);
                 int grn = ((instructionIn.intValue1) & 0x00FF);
                 int blu = ((instructionIn.intValue2) >> 8);
+                Toast.makeText(getApplicationContext(), "Got "+String.valueOf(red)+" "+String.valueOf(grn)+" "+String.valueOf(blu), Toast.LENGTH_SHORT).show();
+                mColorFeedback.setText("TEST!");
+                break;
+/*
+
                 Log.d("HEARD_INSTRUCTION_COLOR",String.valueOf(red)+" "+String.valueOf(grn)+" "+String.valueOf(blu));
                 mColorFeedback.setText(String.valueOf(red)+" "+String.valueOf(grn)+" "+String.valueOf(blu));
                 mColorFeedback.setBackgroundColor(Color.rgb(red,grn,blu));
