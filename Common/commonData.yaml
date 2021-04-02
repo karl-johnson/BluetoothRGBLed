@@ -17,20 +17,20 @@
 # dual int instructions always have LSB 0, floats have 1
 ---
   instructions:
-    -led_color:
-      # tell arduino to set RGB led to the color contained in two ints:
-      # int1 = (red << 8) & (grn)
-      # int2 = (blu << 8)
-      # color values are exactly 1 byte; th
-      android_string: "INST_SET_LED" # android prompt instruction name
-      arduino_code: "0b10001000" # instruction byte value of response
-      arduino_string: "INST_CNF_LED" # arduino response instruction name
-      arduino_code: "0b00001000" # instruction byte value of response
-    -stop_all:
-      android_string: "INST_STOP_ALL" # stop everything!
-      arduino_code: "0b11111110"
-      arduino_string: "INST_STPD_ALL" # ok, I stopped everything!
-      arduino_code: "0b01111110"
+    - led_color:
+        # tell arduino to set RGB led to the color contained in two ints:
+        # int1 = (red << 8) & (grn)
+        # int2 = (blu << 8)
+        # color values are exactly 1 byte; th
+        android_string: "INST_SET_LED" # android prompt instruction name
+        android_code: "0b10001000" # instruction byte value of response
+        arduino_string: "INST_CNF_LED" # arduino response instruction name
+        arduino_code: "0b00001000" # instruction byte value of response
+    - stop_all:
+        android_string: "INST_STOP_ALL" # stop everything!
+        android_code: "0b11111110"
+        arduino_string: "INST_STPD_ALL" # ok, I stopped everything!
+        arduino_code: "0b01111110"
   # don't intend on changing start byte, but it's essential and common so...
   start_byte:
     string: "START_BYTE"
