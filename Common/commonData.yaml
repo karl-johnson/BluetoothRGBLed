@@ -31,7 +31,10 @@
         android_code: "0b11111110"
         arduino_string: "INST_STPD_ALL" # ok, I stopped everything!
         arduino_code: "0b01111110"
-  # don't intend on changing start byte, but it's essential and common so...
+  # place any other global constants here
   start_byte:
     string: "START_BYTE"
     code: "0b00000000"
+  message_length:
+    string: "MESSAGE_LENGTH"
+    code: "6"

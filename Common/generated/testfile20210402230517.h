@@ -12,8 +12,8 @@ typedef enum {
 	INST_STOP_ALL = 0b11111110,
 	INST_STPD_ALL = 0b01111110,
 	// Instruction pair: test_instr
-	TEST_SEND = 0b10000000,
-	TEST_RESP = 0b00000000
+	INST_STOP_ALL = 0b10000000,
+	INST_STPD_ALL = 0b00000000
 } instr_code;
 
 #define START_BYTE 0b00000000

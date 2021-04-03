@@ -2,6 +2,7 @@
 #include <SoftwareSerial.h>
 #include "Instruction.h"
 #include "Utils.h"
+
 void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
   // designed not to require global vars
   // add timeout functionality? DOING NOW!
