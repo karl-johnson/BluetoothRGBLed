@@ -1,7 +1,8 @@
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include "Instruction.h"
+//#include "Instruction.h"
+#include "GeneratedConstants.h"
 #include "Utils.h"
 
 #define RED_PIN 3
@@ -53,12 +54,30 @@ void loop() {
         //Serial.println((int)inputByteArray[3]);
         analogWrite(RED_PIN, inputByteArray[1]);
         analogWrite(GRN_PIN, inputByteArray[2]);
-
         analogWrite(BLU_PIN, inputByteArray[3]);
         encodeAndSendInts(&bluetooth, INST_CNF_LED, latestInstruction.intValue1,
            latestInstruction.intValue2, sentMessageHistory);
         break;
+      case INST_STOP_ALL:
+        analogWrite(RED_PIN, 0);
+        analogWrite(GRN_PIN, 0);
+        analogWrite(BLU_PIN, 0);
+        encodeAndSendInts(&bluetooth, INST_STPD_ALL, 0, 0, sentMessageHistory);
+        while(1) {
+          analogWrite(RED_PIN, 255);
+          delay(500);
+          analogWrite(RED_PIN, 0);
+          delay(500);
+          // blocking loop for now; brick arduino once this is sent
+        }
+        break; // this is never reached, for now
+      case INST_ADD_FL:
+        Serial.println(latestInstruction.floatValue,50);
+        encodeAndSendFloat(&bluetooth, INST_ADD_FL_RESP,
+          latestInstruction.floatValue, sentMessageHistory);
+        break;
       default:
+        //Serial.println((int) INST_SET_LED);
         Serial.println("Nano: Unknown instruction!");
         break;
     }

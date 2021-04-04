@@ -26,15 +26,23 @@
         android_code: "0b10001000" # instruction byte value of response
         arduino_string: "INST_CNF_LED" # arduino response instruction name
         arduino_code: "0b00001000" # instruction byte value of response
+    - add_float:
+        android_string: "INST_ADD_FL" # add pi to this float!
+        android_code: "0b10000001" # instruction byte value of response
+        arduino_string: "INST_ADD_FL_RESP" # this is pi added to that float!
+        arduino_code: "0b00000001" # instruction byte value of response
     - stop_all:
         android_string: "INST_STOP_ALL" # stop everything!
         android_code: "0b11111110"
         arduino_string: "INST_STPD_ALL" # ok, I stopped everything!
         arduino_code: "0b01111110"
+        # add float and int ping/pong and 
   # place any other global constants here
   start_byte:
+    type: "byte"
     string: "START_BYTE"
     code: "0b00000000"
   message_length:
+    type: "int"
     string: "MESSAGE_LENGTH"
     code: "6"

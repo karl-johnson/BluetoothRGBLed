@@ -1,7 +1,9 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include "Instruction.h"
+#include "GeneratedConstants.h"
+//#include "Instruction.h"
 #include "Utils.h"
+
 
 void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
   // designed not to require global vars
@@ -142,8 +144,8 @@ int instDecode(byte* message, instructionStruct* returnStruct) {
   else { // this is for a pair of ints
     // copy the data over using more memory manipulation
     memcpy(&(returnStruct->instruction), message, sizeof(byte));
-    memcpy(&(returnStruct->intValue1), message+1, sizeof(float));
-    memcpy(&(returnStruct->intValue2), message+3, sizeof(float));
+    memcpy(&(returnStruct->intValue1), message+1, sizeof(int));
+    memcpy(&(returnStruct->intValue2), message+3, sizeof(int));
     return 0;
   }
 }

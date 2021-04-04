@@ -69,13 +69,6 @@ public class BluetoothService extends Service {
             Log.e("SEND_W_NO_THREAD","Tried to send with no thread!");
         }
     }
-    /*
-    public ConnectedThread getBluetoothThread() {
-        // TODO: deprecate because don't need thread access outside service
-        // useful if we don't want to create new thread
-        Log.d("GET_BT_THREAD","Got BT Thread: "+String.valueOf(internalConnectedThread != null));
-        return internalConnectedThread;
-    }*/
     public class LocalBinder extends Binder {
         BluetoothService getService() {
             return BluetoothService.this;

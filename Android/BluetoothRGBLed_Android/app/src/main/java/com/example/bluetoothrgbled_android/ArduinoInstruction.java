@@ -16,9 +16,8 @@ public class ArduinoInstruction {
    //public final static int MESSAGE_LENGTH = 6;
 
     public void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, IOException {
-        // TODO check for length
 
-        if(inBytes.length != InstructionConstants.MESSAGE_LENGTH) {
+        if(inBytes.length != GeneratedConstants.MESSAGE_LENGTH) {
             throw new IOException("Wrong message length: "+String.valueOf(inBytes.length));
         }
         if(XORByteArray(inBytes) != 0) {
@@ -30,10 +29,10 @@ public class ArduinoInstruction {
         IsFloatInstruction = (InstructionValue & (byte) 0x01) == 1;
         if(IsFloatInstruction) {
             // TODO endianness might be wrong, check if this works
-            int intBits = inBytes[0] << 24
-                    | (inBytes[1] & 0xFF) << 16
-                    | (inBytes[2] & 0xFF) << 8
-                    | (inBytes[3] & 0xFF);
+            int intBits = inBytes[3] << 24
+                    | (inBytes[2] & 0xFF) << 16
+                    | (inBytes[1] & 0xFF) << 8
+                    | (inBytes[0] & 0xFF);
             floatValue = Float.intBitsToFloat(intBits);
         }
         else {
@@ -50,10 +49,11 @@ public class ArduinoInstruction {
 
         if(IsFloatInstruction) {
             int intBits =  Float.floatToIntBits(floatValue);
-            internalBytes[2] = (byte) (intBits >> 24);
-            internalBytes[3] = (byte) (intBits >> 16);
-            internalBytes[4] = (byte) (intBits >> 8);
-            internalBytes[5] = (byte) (intBits);
+            internalBytes[5] = (byte) (intBits >> 24);
+            internalBytes[4] = (byte) (intBits >> 16);
+            internalBytes[3] = (byte) (intBits >> 8);
+            internalBytes[2] = (byte) (intBits);
+            // swap endianness for Arduino... I think. This is bad code lmao
             }
         else {
             internalBytes[2] = (byte) (intValue1 >> 8);

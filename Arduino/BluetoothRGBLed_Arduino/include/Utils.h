@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
-#include "Instruction.h"
+#include "GeneratedConstants.h"
+//#include "Instruction.h"
 #ifndef UTILS_H
 #define UTILS_H
 

@@ -24,13 +24,12 @@ public class ConnectedThread extends Thread {
     private final InputStream mmInStream;
     private final OutputStream mmOutStream;
 
-    // TODO: MAJOR! move communication critical info to shared file between arduino and android
-    private final static byte START_BYTE = 0b00000000; // just null
-    private final static int MESSAGE_LENGTH = 6;
+    //private final static byte START_BYTE = 0b00000000; // just null
+    //private final static int MESSAGE_LENGTH = 6;
 
     private boolean messageInProgress = false; // keep track of whether message is in progress
     private int byteIndex = 0; // keep track of location in message
-    private byte[] saveArray = new byte[MESSAGE_LENGTH];
+    private byte[] saveArray = new byte[GeneratedConstants.MESSAGE_LENGTH];
 
     public ConnectedThread(BluetoothSocket socket, Handler mHandlerIn) {
         mmSocket = socket;
@@ -63,7 +62,7 @@ public class ConnectedThread extends Thread {
                     if(messageInProgress) {
                         saveArray[byteIndex] = inByte; // add byte to array
                         byteIndex++;
-                        if(byteIndex == MESSAGE_LENGTH) {
+                        if(byteIndex == GeneratedConstants.MESSAGE_LENGTH) {
                             //Log.d("MESSAGE_COMPLETE","Got to Message Completion");
                             // if our read data is now the length of a message
                             // decode instruction
@@ -81,7 +80,7 @@ public class ConnectedThread extends Thread {
                             messageInProgress = false; // message is over
                         }
                     }
-                    else if(inByte == START_BYTE) {
+                    else if(inByte == GeneratedConstants.START_BYTE) {
                         // start message after start byte; don't need to include this in array
                         messageInProgress = true;
                     }
@@ -104,35 +103,6 @@ public class ConnectedThread extends Thread {
         }
     }
 
-    /* Call this from the main activity to send data to the remote device */
-    /*
-    public void write(String input) {
-        byte[] bytes = input.getBytes();           //converts entered String into bytes
-        try {
-            mmOutStream.write(bytes);
-        } catch (IOException e) { }
-    }
-
-    public void writeIntInstruction(byte instructionByte, char value1, char value2) {
-        // TODO: deprecate
-        // NOTE: improper use of chars because best equivalent to 2-byte ints in Arduino
-        // this assumes Java and the Arduino have same endianness, which is a mighty assumption
-        byte[] value1bytes = {(byte) (value1 >> 8), (byte) value1};
-        byte[] value2bytes = {(byte) (value2 >> 8), (byte) value2};
-        byte xorSignature = (byte) (instructionByte ^ value1bytes[0] ^ value1bytes[1]
-                ^ value2bytes[0] ^ value2bytes[1]);
-        // this is messy but it's more annoying to add a array concatenation method/library
-        byte[] sendBytes = {(byte) 0x00, instructionByte, value1bytes[1], value2bytes[0],
-                value2bytes[1], value2bytes[0], xorSignature};
-        try {
-            mmOutStream.write((byte) 0x00);
-            mmOutStream.write(instructionByte);
-            mmOutStream.write(value1bytes);
-            mmOutStream.write(value2bytes);
-            mmOutStream.write(xorSignature);
-        } catch (IOException e) { }
-    }
-*/
     public void writeArduinoInstruction(ArduinoInstruction inputInstruction) {
         //Log.d("SENDING_INSTRUCTION", "Attempting to write instruction bytes");
         byte[] sendBytes = inputInstruction.convertInstructionToBytes();

@@ -24,11 +24,13 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.slider.Slider;
+import com.example.bluetoothrgbled_android.GeneratedConstants;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,13 +65,13 @@ public class MainActivity extends AppCompatActivity {
     private ArrayAdapter<String> mBTArrayAdapter;
     //private ListView mDevicesListView;
     private CheckBox mLED1;
-    private Slider mRedSlider;
-    private Slider mGrnSlider;
-    private Slider mBluSlider;
-    private TextView mColorFeedback;
+    //private Slider mRedSlider;
+    //private Slider mGrnSlider;
+    //private Slider mBluSlider;
+    //private TextView mColorFeedback;
     public Handler mHandler; // Our main handler that will receive callback notifications
     //private ConnectedThread mConnectedThread; // bluetooth background worker thread to send and receive data
-    private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
+    //private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
 
     //private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
 
@@ -82,8 +84,16 @@ public class MainActivity extends AppCompatActivity {
 
     //private final static byte INSTRUCTION_SET_LED = (byte) 0b00001000;
     //private final static byte INSTRUCTION_CNF_LED = (byte) 0b10001000;
+
+    // BEFORE STARTING PANOGRAPH CODE!!!!!
+    // TODO add interactive notification bar service for pausing/going to app/displaying progress
     // TODO add detection of BT status + detect disconnect events
     // TODO add turn-off-all command upon destroy
+    // TODO ping instruction for additional BT status detection
+    // TODO test float endianness rigorously
+    // TODO more robust send/response protocol
+    // TODO Exhaustive testing of bluetooth not dropping on power off etc.
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,13 +106,15 @@ public class MainActivity extends AppCompatActivity {
         //mDiscoverBtn = (Button)findViewById(R.id.discover);
         //mListPairedDevicesBtn = (Button)findViewById(R.id.PairedBtn);
         mLED1 = (CheckBox)findViewById(R.id.checkboxLED1);
-        mRedSlider = (Slider)findViewById(R.id.redSlider);
-        mGrnSlider = (Slider)findViewById(R.id.grnSlider);
-        mBluSlider = (Slider)findViewById(R.id.bluSlider);
-        mColorFeedback = (TextView)findViewById(R.id.feedbackTextView);
+        //mRedSlider = (Slider)findViewById(R.id.redSlider);
+        //mGrnSlider = (Slider)findViewById(R.id.grnSlider);
+        //mBluSlider = (Slider)findViewById(R.id.bluSlider);
+        //mColorFeedback = (TextView)findViewById(R.id.feedbackTextView);
         mBTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
         mBTAdapter = BluetoothAdapter.getDefaultAdapter(); // get a handle on the bluetooth radio
-        JoystickView mJoystick = (JoystickView)findViewById(R.id.hueJoystick);
+        JoystickView mJoystick = (JoystickView) findViewById(R.id.hueJoystick);
+        TextView mFloatSendText = (TextView) findViewById(R.id.userInputFloatBox);
+        Button mFloatSendButton = (Button) findViewById(R.id.floatSend);
         //mDevicesListView = (ListView)findViewById(R.id.devicesListView);
         //mDevicesListView.setAdapter(mBTArrayAdapter); // assign model to view
         //mDevicesListView.setOnItemClickListener(mDeviceClickListener);
@@ -114,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
             public void handleMessage(Message msg){
                 switch(msg.what) {
                     case NEW_INSTRUCTION_IN:
-                        mColorFeedback.setText("Test");
+                        //mColorFeedback.setText("Test");
                         mBluetoothStatus.setText("Test");
                         handleInstructionFromArduino((ArduinoInstruction) msg.obj);
                         //Log.d("MAIN_ACT_INSTR_REC", "Main activity got instruction handler.");
@@ -154,14 +166,14 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v){
                     if ((mLED1.isChecked())) {
-                        sendColor((char) mRedSlider.getValue(),(char) mGrnSlider.getValue(),(char) mBluSlider.getValue());
+                        //sendColor((char) mRedSlider.getValue(),(char) mGrnSlider.getValue(),(char) mBluSlider.getValue());
                     }
                     else {
                         sendColor((char) 0,(char) 0,(char) 0);
                     }
                 }
             });
-
+/*
             mRedSlider.addOnChangeListener(new Slider.OnChangeListener() {
                 @Override
                 public void onValueChange(Slider slider, float value, boolean fromUser) {
@@ -179,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
                 public void onValueChange(Slider slider, float value, boolean fromUser) {
                     sendColorIfChecked((char) mRedSlider.getValue(),(char) mGrnSlider.getValue(),(char) mBluSlider.getValue());
                 }
-            });
+            });*/
             mJoystick.setOnMoveListener(new JoystickView.OnMoveListener() {
                 @Override
                 public void onMove(int angle, int strength) {
@@ -189,6 +201,18 @@ public class MainActivity extends AppCompatActivity {
                     sendColorIfChecked((char) ((newColor>>16) & 0xFF),(char) ((newColor>>8) & 0xFF),(char) ((newColor) & 0xFF));
                 }
             }, 100);
+            mFloatSendButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    EditText editText = (EditText) mFloatSendText;
+                    float floatValue = Float.parseFloat(editText.getText().toString());
+                    ArduinoInstruction sendInstruction = new ArduinoInstruction();
+                    sendInstruction.IsFloatInstruction = true;
+                    sendInstruction.floatValue = floatValue;
+                    sendInstruction.InstructionValue = GeneratedConstants.INST_ADD_FL;
+                    mBluetoothService.sendInstructionViaThread(sendInstruction);
+                }
+            });
         }
     }
 
@@ -268,8 +292,7 @@ public class MainActivity extends AppCompatActivity {
     }
     public void sendColor(char redValue, char grnValue, char bluValue) {
         ArduinoInstruction sendInstruction = new ArduinoInstruction();
-        sendInstruction.InstructionValue = InstructionConstants.INSTRUCTION_SET_LED;
-        sendInstruction.IsFloatInstruction = false;
+        sendInstruction.InstructionValue = GeneratedConstants.INST_SET_LED;
         sendInstruction.IsFloatInstruction = false;
         sendInstruction.intValue1 = (char) (((redValue & 0x00FF) << 8) | (grnValue & 0x00FF));
         sendInstruction.intValue2 = (char) (bluValue << 8);
@@ -290,16 +313,15 @@ public class MainActivity extends AppCompatActivity {
         // this is where we decide what each instruction from the Arduino should do
         // how to handle ask-and-respond instructions?
         switch(instructionIn.InstructionValue) {
-            case InstructionConstants.INSTRUCTION_CNF_LED:
+            case GeneratedConstants.INST_CNF_LED:
                 // set a color
                 int red = ((instructionIn.intValue1) >> 8);
                 int grn = ((instructionIn.intValue1) & 0x00FF);
                 int blu = ((instructionIn.intValue2) >> 8);
                 Toast.makeText(getApplicationContext(), "Got "+String.valueOf(red)+" "+String.valueOf(grn)+" "+String.valueOf(blu), Toast.LENGTH_SHORT).show();
-                mColorFeedback.setText("TEST!");
+                //mColorFeedback.setText("TEST!");
                 break;
 /*
-
                 Log.d("HEARD_INSTRUCTION_COLOR",String.valueOf(red)+" "+String.valueOf(grn)+" "+String.valueOf(blu));
                 mColorFeedback.setText(String.valueOf(red)+" "+String.valueOf(grn)+" "+String.valueOf(blu));
                 mColorFeedback.setBackgroundColor(Color.rgb(red,grn,blu));
@@ -311,6 +333,11 @@ public class MainActivity extends AppCompatActivity {
                     mColorFeedback.setTextColor(Color.WHITE);
                 }
                 break;*/
+            case GeneratedConstants.INST_STPD_ALL:
+                Toast.makeText(getApplicationContext(), "Arduino confirmed stopped.", Toast.LENGTH_SHORT).show();
+            case GeneratedConstants.INST_ADD_FL_RESP:
+                Toast.makeText(getApplicationContext(), String.valueOf(instructionIn.floatValue), Toast.LENGTH_SHORT).show();
+                break;
             default:
                 Toast.makeText(getApplicationContext(), "Unknown Instruction", Toast.LENGTH_SHORT).show();
         }

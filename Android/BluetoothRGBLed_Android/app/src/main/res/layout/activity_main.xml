@@ -16,59 +16,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <CheckBox
-            android:id="@+id/checkboxLED1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignStart="@+id/bluetoothStatus"
-            android:layout_alignLeft="@+id/bluetoothStatus"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="10dp"
-            android:checked="false"
-            android:scaleX="1.7"
-            android:scaleY="1.7"
-            android:text="Toggle LED"
-            android:textStyle="bold" />
-
-        <com.google.android.material.slider.Slider
-            android:id="@+id/redSlider"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:value="false"
-            app:haloColor="#FF1744"
-            app:thumbColor="#FF1744"
-            app:tickColorActive="#FF1744"
-            app:tickColorInactive="#FF1744"
-            app:trackColor="#4DFF1744"
-            app:trackColorActive="#FF1744"
-            app:trackColorInactive="#4DFF1744"
-            android:valueFrom="0.0"
-            android:valueTo="255"
-            android:stepSize="1"/>
-
-        <com.google.android.material.slider.Slider
-            android:id="@+id/grnSlider"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:thumbColor="#00E676"
-            app:trackColor="#4D00E676"
-            app:trackColorActive="#8000E676"
-            app:trackColorInactive="#4D00E676"
-            android:valueFrom="0.0"
-            android:valueTo="255"
-            android:stepSize="1" />
-
-        <com.google.android.material.slider.Slider
-            android:id="@+id/bluSlider"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:thumbColor="#3D5AFE"
-            app:trackColor="#4D651FFF"
-            app:trackColorActive="#FFFFFF"
-            android:valueFrom="0.0"
-            android:valueTo="255"
-            android:stepSize="1" />
-<!--
+        <!--
         <LinearLayout
             android:orientation="horizontal"
             android:layout_width="match_parent"
@@ -93,40 +41,32 @@
                 android:layout_centerHorizontal="true" />
         </LinearLayout>
 -->
-        <TextView
-            android:id="@+id/feedbackTextView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#FFFFFF"
-            android:gravity="center"
-            android:text="Color Back From Arduino"
-            android:textColor="#808080"
-            android:textSize="24sp"
-            android:textStyle="bold" />
 
         <LinearLayout
-            android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="0.1"
-                android:text="Status:"
                 android:ellipsize="end"
                 android:maxLines="1"
+                android:text="Status:"
                 android:textStyle="bold" />
+
             <TextView
+                android:id="@+id/bluetoothStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="0.9"
 
-                android:text="Bluetooth Status"
-                android:id="@+id/bluetoothStatus"
+                android:layout_alignTop="@+id/checkboxLED1"
+                android:layout_centerHorizontal="true"
+                android:layout_weight="0.9"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:layout_centerHorizontal="true"
-                android:layout_alignTop="@+id/checkboxLED1" />
+                android:text="Bluetooth Status" />
 
         </LinearLayout>
 
@@ -139,6 +79,46 @@
             android:layout_toLeftOf="@+id/off"
             android:onClick="onBluetoothPress"
             android:text="Bluetooth Settings" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/userInputFloatBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:text="Float"
+                app:layout_constraintEnd_toStartOf="@+id/floatSend"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/floatSend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/userInputFloatBox" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <CheckBox
+            android:id="@+id/checkboxLED1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@+id/bluetoothStatus"
+            android:layout_alignLeft="@+id/bluetoothStatus"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:checked="false"
+            android:scaleX="1.7"
+            android:scaleY="1.7"
+            android:text="Toggle LED"
+            android:textStyle="bold" />
 
         <io.github.controlwear.virtual.joystick.android.JoystickView
             android:id="@+id/hueJoystick"
