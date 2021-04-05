@@ -1,14 +1,15 @@
 package com.example.bluetoothrgbled_android;
 
 import java.io.IOException;
-import com.example.bluetoothrgbled_android.InstructionConstants;
 
 public class ArduinoInstruction {
-    public byte InstructionValue = 0x00;
-    public boolean IsFloatInstruction = false;
-    public char intValue1 = 0;
-    public char intValue2 = 0;
+    public byte instructionValue = 0x00;
+    public boolean isFloatInstruction = false;
+    private boolean isRawBytes = false;
+    public short intValue1 = 0;
+    public short intValue2 = 0;
     public float floatValue = 0;
+    public byte[] rawByteValue = new byte[4];
 
 
 
@@ -18,69 +19,80 @@ public class ArduinoInstruction {
     public void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, IOException {
 
         if(inBytes.length != GeneratedConstants.MESSAGE_LENGTH) {
-            throw new IOException("Wrong message length: "+String.valueOf(inBytes.length));
+            throw new IOException("Wrong message length: "+inBytes.length);
         }
         if(XORByteArray(inBytes) != 0) {
             // we have a corrupted instruction
             throw new CorruptedInstructionException("Got Corrupted Instruction");
         }
-        InstructionValue = inBytes[0];
+        instructionValue = inBytes[0];
         // hard-coded nature of our comm protocol: LSB 1 for float instruction
-        IsFloatInstruction = (InstructionValue & (byte) 0x01) == 1;
-        if(IsFloatInstruction) {
-            // TODO endianness might be wrong, check if this works
-            int intBits = inBytes[3] << 24
-                    | (inBytes[2] & 0xFF) << 16
-                    | (inBytes[1] & 0xFF) << 8
-                    | (inBytes[0] & 0xFF);
+        isFloatInstruction = (instructionValue & (byte) 0x01) == 1;
+        if(isFloatInstruction) {
+            int intBits = inBytes[4] << 24
+                    | (inBytes[3] & 0xFF) << 16
+                    | (inBytes[2] & 0xFF) << 8
+                    | (inBytes[1] & 0xFF);
             floatValue = Float.intBitsToFloat(intBits);
         }
         else {
-            intValue1 = (char) (((inBytes[1] & 0xFF) << 8) | (inBytes[2] & 0xFF));
-            intValue2 = (char) (((inBytes[3] & 0xFF) << 8) | (inBytes[4] & 0xFF));
+            intValue1 = (short) (((inBytes[1] & 0xFF) << 8) | (inBytes[2] & 0xFF));
+            intValue2 = (short) (((inBytes[3] & 0xFF) << 8) | (inBytes[4] & 0xFF));
         }
+    }
+    public void constructFloatInstruction(byte instruction, float value) {
+        isFloatInstruction = true;
+        instructionValue = instruction;
+        floatValue = value;
+    }
+    public void constructIntInstruction(byte instruction, short value1, short value2) {
+        isFloatInstruction = false;
+        instructionValue = instruction;
+        intValue1 = value1;
+        intValue2 = value2;
+    }
+    public void constractRawByteInstruction(byte instruction, byte[] bytes) {
+        isRawBytes = true;
+        instructionValue = instruction;
+        rawByteValue = bytes;
     }
     public byte[] convertInstructionToBytes() {
 
         byte[] internalBytes = new byte[InstructionConstants.MESSAGE_LENGTH+1]; // should be initialized to 0
         // length MESSAGE_LENGTH + 1 b/c start byte
         internalBytes[0] = 0x00;
-        internalBytes[1] = InstructionValue;
-
-        if(IsFloatInstruction) {
-            int intBits =  Float.floatToIntBits(floatValue);
-            internalBytes[5] = (byte) (intBits >> 24);
-            internalBytes[4] = (byte) (intBits >> 16);
-            internalBytes[3] = (byte) (intBits >> 8);
-            internalBytes[2] = (byte) (intBits);
-            // swap endianness for Arduino... I think. This is bad code lmao
-            }
+        internalBytes[1] = instructionValue;
+        if(isRawBytes) {
+            System.arraycopy(rawByteValue, 0, internalBytes, 2, 4);
+        }
         else {
-            internalBytes[2] = (byte) (intValue1 >> 8);
-            internalBytes[3] = (byte) (intValue1);
-            internalBytes[4] = (byte) (intValue2 >> 8);
-            internalBytes[5] = (byte) (intValue2);
+            if (isFloatInstruction) {
+                int intBits = Float.floatToIntBits(floatValue);
+                internalBytes[5] = (byte) (intBits >> 24);
+                internalBytes[4] = (byte) (intBits >> 16);
+                internalBytes[3] = (byte) (intBits >> 8);
+                internalBytes[2] = (byte) (intBits);
+                // swap endianness for Arduino. This is stupid but works
+            } else {
+                internalBytes[2] = (byte) (intValue1 >> 8);
+                internalBytes[3] = (byte) (intValue1);
+                internalBytes[4] = (byte) (intValue2 >> 8);
+                internalBytes[5] = (byte) (intValue2);
+            }
         }
         internalBytes[6] = XORByteArray(internalBytes); // index 5 is 0 prior to this so OK
         return internalBytes;
     }
-
-    private byte XORByteArray(byte[] input) {
+    public byte XORByteArray(byte[] input) {
         byte xorResult = 0;
-        int len = input.length;
-        for(int xorIndex = 0; xorIndex < len; xorIndex++) {
-            xorResult = (byte) (xorResult ^ input[xorIndex]);
+        for (byte b : input) {
+            xorResult = (byte) (xorResult ^ b);
         }
         return xorResult;
     }
 
-    public class CorruptedInstructionException extends Exception {
+    public static class CorruptedInstructionException extends Exception {
         public CorruptedInstructionException(String message) {
-            super(message);
-        }
-    }
-    public class MessageLengthException extends Exception {
-        public MessageLengthException(String message) {
             super(message);
         }
     }

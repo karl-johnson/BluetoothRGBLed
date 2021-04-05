@@ -85,17 +85,6 @@ public class ConnectedThread extends Thread {
                         messageInProgress = true;
                     }
                 }
-                /*
-                //old code
-                // Read from the InputStream
-                bytes = mmInStream.available();
-                if(bytes != 0) {
-                    SystemClock.sleep(100); //pause and wait for rest of data. Adjust this depending on your sending speed.
-                    bytes = mmInStream.available(); // how many bytes are ready to be read?
-                    bytes = mmInStream.read(buffer, 0, bytes); // record how many bytes we actually read
-                    mHandlerIn.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
-                            .sendToTarget(); // Send the obtained bytes to the UI activity
-                }*/
             } catch (IOException e) {
                 e.printStackTrace();
                 break;
@@ -106,7 +95,7 @@ public class ConnectedThread extends Thread {
     public void writeArduinoInstruction(ArduinoInstruction inputInstruction) {
         //Log.d("SENDING_INSTRUCTION", "Attempting to write instruction bytes");
         byte[] sendBytes = inputInstruction.convertInstructionToBytes();
-        Log.d("BYTES_SENT",bytesToHex(sendBytes));
+        Log.d("BYTES_SENT","0x"+bytesToHex(sendBytes));
         try {
             mmOutStream.write(sendBytes);
         } catch (IOException e) {
@@ -114,8 +103,7 @@ public class ConnectedThread extends Thread {
         }
     }
 
-    // temp function to print byte array in hex
-
+    // debug function to print byte array in hex
     private static final byte[] HEX_ARRAY = "0123456789ABCDEF".getBytes();
     public static String bytesToHex(byte[] bytes) {
         byte[] hexChars = new byte[bytes.length * 2];

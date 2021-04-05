@@ -8,12 +8,9 @@ typedef enum {
 	// Instruction pair: led_color
 	INST_SET_LED = 0b10001000,
 	INST_CNF_LED = 0b00001000,
-	// Instruction pair: ping_float
-	INST_PING_FLO = 0b10000001,
-	INST_PONG_FLO = 0b00000001,
-	// Instruction pair: ping_int
-	INST_PING_INT = 0b10000010,
-	INST_PONG_INT = 0b00000010,
+	// Instruction pair: add_float
+	INST_ADD_FL = 0b10000001,
+	INST_ADD_FL_RESP = 0b00000001,
 	// Instruction pair: stop_all
 	INST_STOP_ALL = 0b11111110,
 	INST_STPD_ALL = 0b01111110

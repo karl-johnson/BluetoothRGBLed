@@ -22,8 +22,8 @@ void updateRx(SoftwareSerial* serialDevice, byte* saveArray, bool* readyFlag) {
   while (serialDevice->available()) {
     byte inByte = serialDevice->read();
     if(messageInProgress) {
-      Serial.print(inByte, HEX);
-      Serial.print(" ");
+      //Serial.print(inByte, HEX);
+      //Serial.print(" ");
       saveArray[byteIndex] = inByte; // add byte to array
       byteIndex++;
       if(byteIndex == MESSAGE_LENGTH) {
@@ -79,7 +79,7 @@ int encodeAndSendFloat(SoftwareSerial* serialDevice, byte instruction,
   messageSend[0] = instruction; // put instruction in first slot
   // place float bytes in array using memcpy
   // https://stackoverflow.com/questions/21005845/how-to-get-float-in-bytes
-  memcpy(messageSend+1, &value, sizeof(value)); // copy value into next bytes
+  memcpy(messageSend+1, &value, sizeof(float)); // copy value into next bytes
   // XOR all bytes up to last to create checksum
   messageSend[MESSAGE_LENGTH-1] = XORbyteArray(messageSend,MESSAGE_LENGTH-1);
   // update message history with byte array
@@ -134,18 +134,31 @@ int instDecode(byte* message, instructionStruct* returnStruct) {
     return 2;
   }
   // if message is good, decode it!
-  if(message[1]%2) { // if LSB is 1, this instruction is for a float value
+  if(message[0]%2) { // if LSB is 1, this instruction is for a float value
     // copy intruction value to address of instruction value entry in dereferenced return struct (is this kosher?)
-    memcpy(&(returnStruct->instruction), message, sizeof(byte));
+    //memcpy(&(returnStruct->instruction), message, sizeof(byte));
     // do the same weird trick for instruction
-    memcpy(&(returnStruct->floatValue), message+1, sizeof(float));
+    returnStruct->instruction = message[0];
+    //returnStruct->floatValue = 4096;
+    //Serial.println("FLOAT DECODED");
+    returnStruct->floatValue = *((float*) (message+1));
+    //returnStruct->floatValue = *((float*) &message[1]);
+    Serial.println(returnStruct->floatValue);
+    // interpret next 4 bytes as a float by casting pointer to second element
+    // to a float pointer
+    //memcpy(&(returnStruct->floatValue), message+1, sizeof(float));
     return 1;
   }
   else { // this is for a pair of ints
     // copy the data over using more memory manipulation
-    memcpy(&(returnStruct->instruction), message, sizeof(byte));
-    memcpy(&(returnStruct->intValue1), message+1, sizeof(int));
-    memcpy(&(returnStruct->intValue2), message+3, sizeof(int));
+    //Serial.println("INT DECODED");
+    // cheange out with pointer casting!!! if it works
+    //memcpy(&(returnStruct->instruction), message, sizeof(byte));
+    //memcpy(&(returnStruct->intValue1), message+1, sizeof(int));
+    //memcpy(&(returnStruct->intValue2), message+3, sizeof(int));
+    returnStruct->instruction = message[0];
+    returnStruct->intValue1 = *((int*) (message+1));
+    returnStruct->intValue2 = *((int*) (message+3));
     return 0;
   }
 }

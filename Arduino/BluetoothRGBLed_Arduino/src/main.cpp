@@ -16,7 +16,7 @@
 byte inputByteArray[MESSAGE_LENGTH];
 byte sentMessageHistory[MESSAGE_HISTORY_LENGTH][MESSAGE_LENGTH] = {0};
 bool inputReadyFlag = false;
-instructionStruct latestInstruction = {0,0,0,0};
+instructionStruct latestInstruction = {0,1,0,0};
 SoftwareSerial bluetooth(BTH_RX,BTH_TX);
 
 void setup() {
@@ -43,7 +43,7 @@ void loop() {
     // if the instruction was good, parse it
     switch(latestInstruction.instruction) {
       case INST_SET_LED:
-        Serial.println("Setting LEDs:");
+        //Serial.println("Setting LEDs:");
         // first byte of value is red
         // second byte of value is green
         // third byte is blue
@@ -71,11 +71,15 @@ void loop() {
           // blocking loop for now; brick arduino once this is sent
         }
         break; // this is never reached, for now
-      case INST_ADD_FL:
-        Serial.println(latestInstruction.floatValue,50);
-        encodeAndSendFloat(&bluetooth, INST_ADD_FL_RESP,
+      case INST_PING_FLO:
+        //Serial.println(latestInstruction.floatValue,50);
+        encodeAndSendFloat(&bluetooth, INST_PONG_FLO,
           latestInstruction.floatValue, sentMessageHistory);
         break;
+      case INST_PING_INT:
+        encodeAndSendInts(&bluetooth, INST_PONG_INT, latestInstruction.intValue1,
+          latestInstruction.intValue2, sentMessageHistory);
+          break;
       default:
         //Serial.println((int) INST_SET_LED);
         Serial.println("Nano: Unknown instruction!");
