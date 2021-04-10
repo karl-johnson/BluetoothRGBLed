@@ -9,6 +9,8 @@
 // how many past messages you've sent that you store; do this in case of corrupted messages for re-sending
 #define MESSAGE_TIMEOUT_DURATION 10
 
+
+
 typedef struct InstructionStruct {
   byte instruction;
   float floatValue;

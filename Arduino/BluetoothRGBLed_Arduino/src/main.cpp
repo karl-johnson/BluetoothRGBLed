@@ -10,7 +10,11 @@
 #define BLU_PIN 5
 #define BTH_RX 2 // bluetooth RX - connected to TX of HC-05
 #define BTH_TX 4 // bluetooth TX - connected to RX of HC-05
+#define BTH_ST 7
+#define STATE_DISCONNECTED LOW // signal on BTH_ST when it it's disconnected
+#define BTH_EN 6
 #define BAUD_RATE 57600
+
 
 // global variables
 byte inputByteArray[MESSAGE_LENGTH];
@@ -20,7 +24,8 @@ instructionStruct latestInstruction = {0,1,0,0};
 SoftwareSerial bluetooth(BTH_RX,BTH_TX);
 
 void setup() {
-  // put your setup code here, to run once:
+  pinMode(BTH_ST, INPUT); // want to make sure we don't accidentally write
+  pinMode(BTH_EN, OUTPUT);
   Serial.begin(BAUD_RATE);
   bluetooth.begin(38400);
   // this baud rate is hardcoded b/c set in HC-05 AT+ settings
@@ -28,9 +33,38 @@ void setup() {
 }
 
 void loop() {
+  if(digitalRead(BTH_ST) == STATE_DISCONNECTED) {
+    // HC-05 has indicated it's not connected.
+    // Stort off by making sure everything critical is stopped RIGHT NOW.
+    Serial.println("HC-05 Disconnected.");
+    analogWrite(RED_PIN, 0);
+    analogWrite(GRN_PIN, 0);
+    analogWrite(BLU_PIN, 0);
+    while(digitalRead(BTH_ST) == STATE_DISCONNECTED) {
+      // blink LED until we re-connect
+      // blocking delays poll every second
+      analogWrite(RED_PIN,255);
+      delay(500);
+      analogWrite(RED_PIN,0);
+      delay(500);
+    }
+    Serial.println("HC-05 Re-connected!");
+    // double-blink green
+    analogWrite(GRN_PIN,255);
+    delay(250);
+    analogWrite(GRN_PIN,0);
+    delay(250);
+    analogWrite(GRN_PIN,255);
+    delay(250);
+    analogWrite(GRN_PIN,0);
+    delay(250);
+    // this blocks us being able to get data for 2s
+    // in the future, implement a ping back to Android when we're ready for data
+  }
+
   updateRx(&bluetooth, inputByteArray, &inputReadyFlag);
   if(inputReadyFlag) {
-    inputReadyFlag = false;
+    //inputReadyFlag = false;
 
     // we got a message! let's decode it.
     int returnVal = instDecode(inputByteArray, &latestInstruction);

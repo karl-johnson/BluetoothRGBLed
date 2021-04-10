@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
     // TODO add turn-off-all command upon destroy
     // TODO more robust send/response protocol
     // TODO Exhaustive testing of bluetooth not dropping on power off etc.
-
+    // TODO save all activity state details on switching activities
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,15 +143,10 @@ public class MainActivity extends AppCompatActivity {
                     EditText editText = (EditText) mFloatSendText;
                     try {
                         float floatValue = Float.parseFloat(editText.getText().toString());
-                        ArduinoInstruction sendInstruction = new ArduinoInstruction();
-                        sendInstruction.constructFloatInstruction(
-                                GeneratedConstants.INST_PING_FLO,
-                                floatValue
-                        );
                         sentTime = System.currentTimeMillis();
                         //Toast.makeText(getApplicationContext(), String.valueOf(sentTime), Toast.LENGTH_SHORT).show();
-                        mBluetoothService.sendInstructionViaThread(sendInstruction);
-
+                        mBluetoothService.sendInstructionViaThread(new ArduinoInstruction(
+                                GeneratedConstants.INST_PING_FLO, floatValue));
                     } catch(NumberFormatException e) {
                         Toast.makeText(getApplicationContext(), "Wrong number format!", Toast.LENGTH_SHORT).show();
                     }
@@ -162,6 +157,8 @@ public class MainActivity extends AppCompatActivity {
     }
 /*
     // TODO: implement this non-leaky handler
+    // Left off: despite calling setTarget on resume/create/everywhere, mActivity.get() always
+    // returns null???? Looks like garbage collector is going haywire or something
     private static class hHandler extends Handler {
         public WeakReference<MainActivity> mActivity;
 
@@ -194,6 +191,24 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 */
+/*
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        final EditText floatTextBox = (EditText) findViewById(R.id.userInputFloatBox);
+        outState.putString("FloatBoxText",floatTextBox.getText().toString());
+        Log.d("INSTANCE_STATE","Saved text:"+floatTextBox.getText().toString());
+    }
+
+    @Override
+    protected  void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        final EditText floatTextBox = (EditText) findViewById(R.id.userInputFloatBox);
+        floatTextBox.setText(savedInstanceState.getString("FloatBoxText"));
+        Log.d("INSTANCE_STATE","Saved text:"+savedInstanceState.getString("FloatBoxText"));
+    }*/
+
     private ServiceConnection connection = new ServiceConnection() {
 
         @Override
@@ -256,6 +271,7 @@ public class MainActivity extends AppCompatActivity {
             unbindService(connection);
             mShouldUnbind = false;
         }
+        Log.d("MAIN_DESTROYED","Main Service Destroyed");
         super.onDestroy();
     }
     public void onBluetoothPress(View view) {
@@ -269,10 +285,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     public void sendColor(byte redValue, byte grnValue, byte bluValue) {
-        ArduinoInstruction sendInstruction = new ArduinoInstruction();
         byte[] sendColors = {redValue, grnValue, bluValue, 0x00};
-        sendInstruction.constractRawByteInstruction(GeneratedConstants.INST_SET_LED,sendColors);
-        mBluetoothService.sendInstructionViaThread(sendInstruction);
+        mBluetoothService.sendInstructionViaThread(new ArduinoInstruction(
+                GeneratedConstants.INST_SET_LED,sendColors));
         //Toast.makeText(getApplicationContext(), "Sent value", Toast.LENGTH_SHORT).show();
         Log.d("COLORS_SENT","Values sent: "+
                 String.valueOf((int)redValue)+" "+
@@ -288,10 +303,12 @@ public class MainActivity extends AppCompatActivity {
                 int red = ((instructionIn.intValue1) >> 8);
                 int grn = ((instructionIn.intValue1) & 0x00FF);
                 int blu = ((instructionIn.intValue2) >> 8);
-                Toast.makeText(getApplicationContext(), "Got "+
+                /*Toast.makeText(getApplicationContext(), "Got "+
                         String.valueOf(red)+" "+
                         String.valueOf(grn)+" "+
                         String.valueOf(blu), Toast.LENGTH_SHORT).show();
+
+                 */
                 //mColorFeedback.setText("TEST!");
                 break;
             case GeneratedConstants.INST_STPD_ALL:

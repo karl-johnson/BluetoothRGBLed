@@ -16,7 +16,29 @@ public class ArduinoInstruction {
     //public final static byte START_BYTE = 0b00000000; // just null
    //public final static int MESSAGE_LENGTH = 6;
 
-    public void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, IOException {
+    // this constructor is for making an instruction from bytes received from Arduino
+    public ArduinoInstruction(byte[] rawDataIn) throws CorruptedInstructionException, IOException {
+        convertBytesToInstruction(rawDataIn);
+    }
+
+    // these constructors are for assembling instructions to send
+    public ArduinoInstruction(byte instruction, float value) {
+        isFloatInstruction = true;
+        instructionValue = instruction;
+        floatValue = value;
+    }
+    public ArduinoInstruction(byte instruction, short value1, short value2) {
+        isFloatInstruction = false;
+        instructionValue = instruction;
+        intValue1 = value1;
+        intValue2 = value2;
+    }
+    public ArduinoInstruction(byte instruction, byte[] value) {
+        isRawBytes = true;
+        instructionValue = instruction;
+        rawByteValue = value;
+    }
+    private void convertBytesToInstruction(byte[] inBytes) throws CorruptedInstructionException, IOException {
 
         if(inBytes.length != GeneratedConstants.MESSAGE_LENGTH) {
             throw new IOException("Wrong message length: "+inBytes.length);
@@ -40,6 +62,7 @@ public class ArduinoInstruction {
             intValue2 = (short) (((inBytes[3] & 0xFF) << 8) | (inBytes[4] & 0xFF));
         }
     }
+    /*
     public void constructFloatInstruction(byte instruction, float value) {
         isFloatInstruction = true;
         instructionValue = instruction;
@@ -51,11 +74,11 @@ public class ArduinoInstruction {
         intValue1 = value1;
         intValue2 = value2;
     }
-    public void constractRawByteInstruction(byte instruction, byte[] bytes) {
+    public void constructRawByteInstruction(byte instruction, byte[] bytes) {
         isRawBytes = true;
         instructionValue = instruction;
         rawByteValue = bytes;
-    }
+    }*/
     public byte[] convertInstructionToBytes() {
 
         byte[] internalBytes = new byte[InstructionConstants.MESSAGE_LENGTH+1]; // should be initialized to 0
@@ -83,7 +106,7 @@ public class ArduinoInstruction {
         internalBytes[6] = XORByteArray(internalBytes); // index 5 is 0 prior to this so OK
         return internalBytes;
     }
-    public byte XORByteArray(byte[] input) {
+    private byte XORByteArray(byte[] input) {
         byte xorResult = 0;
         for (byte b : input) {
             xorResult = (byte) (xorResult ^ b);

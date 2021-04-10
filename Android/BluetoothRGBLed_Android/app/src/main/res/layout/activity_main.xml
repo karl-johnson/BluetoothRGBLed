@@ -92,7 +92,7 @@
                 android:layout_marginRight="8dp"
                 android:ems="10"
                 android:inputType="textPersonName"
-                android:text="Float"
+                android:hint="Enter number..."
                 app:layout_constraintEnd_toStartOf="@+id/floatSend"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />

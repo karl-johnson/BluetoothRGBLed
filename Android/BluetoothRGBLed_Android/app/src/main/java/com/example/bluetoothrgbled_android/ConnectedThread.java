@@ -64,11 +64,10 @@ public class ConnectedThread extends Thread {
                         byteIndex++;
                         if(byteIndex == GeneratedConstants.MESSAGE_LENGTH) {
                             //Log.d("MESSAGE_COMPLETE","Got to Message Completion");
-                            // if our read data is now the length of a message
-                            // decode instruction
-                            ArduinoInstruction newInstruction = new ArduinoInstruction();
+                            // if our read data is now the length of a message, decode instruction
+                            // and send ArduinoInstruction object via handler
                             try {
-                                newInstruction.convertBytesToInstruction(saveArray);
+                                ArduinoInstruction newInstruction = new ArduinoInstruction(saveArray);
                                 mmHandler.obtainMessage(NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
                                 Log.d("SENT","Sent instruction handler");
                             } catch (ArduinoInstruction.CorruptedInstructionException e) {
