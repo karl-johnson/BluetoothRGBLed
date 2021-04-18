@@ -17,6 +17,15 @@
 # dual int instructions always have LSB 0, floats have 1
 ---
   instructions:
+    - conn_conf:
+        # confirm Arduino is present on other side of HC-05
+        # data does not matter at all
+        # for actual panorama machine, eliminate this redundancy with ping_int
+        android_string: "INST_CONN_REQ"
+        android_code: "0b11000000"
+        arduino_string: "INST_CONN_CONF"
+        arduino_code: "0b01000000"
+
     - led_color:
         # tell arduino to set RGB led to the color contained in two ints:
         # int1 = (red << 8) & (grn)

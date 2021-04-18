@@ -4,9 +4,6 @@ package com.example.bluetoothrgbled_android;
 // ** BEGIN CONSTANT DEFINITIONS **
 public class GeneratedConstants {
 	// ** BEGIN INSTRUCTION DEFINITIONS **
-	// Instruction pair: conn_conf
-	public final static byte INST_CONN_REQ = (byte) 0b11000000;
-	public final static byte INST_CONN_CONF = (byte) 0b01000000;
 	// Instruction pair: led_color
 	public final static byte INST_SET_LED = (byte) 0b10001000;
 	public final static byte INST_CNF_LED = (byte) 0b00001000;

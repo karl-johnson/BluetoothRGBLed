@@ -57,7 +57,9 @@ void loop() {
     analogWrite(GRN_PIN,255);
     delay(250);
     analogWrite(GRN_PIN,0);
+    encodeAndSendInts(&bluetooth, INST_CONN_CONF, 0, 0, sentMessageHistory);
     delay(250);
+
     // this blocks us being able to get data for 2s
     // in the future, implement a ping back to Android when we're ready for data
   }

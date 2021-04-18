@@ -56,6 +56,10 @@ public class MainActivity extends AppCompatActivity {
     // TODO more robust send/response protocol
     // TODO Exhaustive testing of bluetooth not dropping on power off etc.
     // TODO save all activity state details on switching activities
+    // TODO arduino connect confirm instruction
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
