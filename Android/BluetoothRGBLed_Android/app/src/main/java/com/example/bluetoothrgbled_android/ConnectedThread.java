@@ -16,9 +16,6 @@ import java.nio.charset.StandardCharsets;
 
 public class ConnectedThread extends Thread {
 
-    public final static int NEW_INSTRUCTION_IN = 1; // used to identify adding bluetooth names
-    public final static int NEW_INSTRUCTION_CORRUPTED = 2; // used in bluetooth handler to identify message update
-
     private final BluetoothSocket mmSocket;
     private final Handler mmHandler;
     private final InputStream mmInStream;
@@ -68,10 +65,10 @@ public class ConnectedThread extends Thread {
                             // and send ArduinoInstruction object via handler
                             try {
                                 ArduinoInstruction newInstruction = new ArduinoInstruction(saveArray);
-                                mmHandler.obtainMessage(NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
+                                mmHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_IN, newInstruction).sendToTarget();
                                 Log.d("SENT","Sent instruction handler");
                             } catch (ArduinoInstruction.CorruptedInstructionException e) {
-                                mmHandler.obtainMessage(NEW_INSTRUCTION_CORRUPTED).sendToTarget();
+                                mmHandler.obtainMessage(BluetoothService.NEW_INSTRUCTION_CORRUPTED).sendToTarget();
                             } catch (IOException e2) {
                                 Log.e("BAD_ENC_MESSAGE_LENGTH",e2.getMessage());
                             }

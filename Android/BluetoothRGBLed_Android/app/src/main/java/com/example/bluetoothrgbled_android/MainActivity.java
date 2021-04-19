@@ -1,5 +1,6 @@
 package com.example.bluetoothrgbled_android;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -26,10 +27,6 @@ import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import io.github.controlwear.virtual.joystick.android.JoystickView;
-
-import static com.example.bluetoothrgbled_android.ConnectedThread.NEW_INSTRUCTION_IN;
-import static com.example.bluetoothrgbled_android.ConnectedThread.NEW_INSTRUCTION_CORRUPTED;
-
 
 public class MainActivity extends AppCompatActivity {
 
@@ -80,15 +77,18 @@ public class MainActivity extends AppCompatActivity {
             mHandler.setTarget(this);*/
 
         mHandler = new Handler(){
+            @SuppressLint("HandlerLeak")
             public void handleMessage(Message msg){
                 switch(msg.what) {
-                    case NEW_INSTRUCTION_IN:
+                    case BluetoothService.NEW_INSTRUCTION_IN:
                         mBluetoothStatus.setText("Test");
                         handleInstructionFromArduino((ArduinoInstruction) msg.obj);
                         //Log.d("MAIN_ACT_INSTR_REC", "Main activity got instruction handler.");
                         break;
-                    case NEW_INSTRUCTION_CORRUPTED:
+                    case BluetoothService.NEW_INSTRUCTION_CORRUPTED:
                         Toast.makeText(getApplicationContext(),"Got corrupted instruction!",Toast.LENGTH_LONG).show();
+                        break;
+                    case BluetoothService.CONN_STATUS_UPDATED:
                         break;
                 }
 /*
@@ -268,6 +268,11 @@ public class MainActivity extends AppCompatActivity {
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
         bindService(BTServiceIntent, connection, Context.BIND_AUTO_CREATE);
         mShouldUnbind = true;
+        if(mBluetoothService != null) {
+            updateBluetoothStatusText(mBluetoothService.connectionStatus);
+        }
+
+        Log.d("SET_BT_STATUS","Set Bluetooth Status");
     }
     protected void onDestroy() {
         if (mShouldUnbind) {
@@ -329,6 +334,22 @@ public class MainActivity extends AppCompatActivity {
                 break;
             default:
                 Toast.makeText(getApplicationContext(), "Unknown Instruction", Toast.LENGTH_SHORT).show();
+        }
+    }
+    private void updateBluetoothStatusText(int statusIn) {
+        switch(statusIn) {
+            case BluetoothService.STATUS_DISCONNECTED:
+                mBluetoothStatus.setBackgroundColor(getResources().getColor(R.color.md_red_500));
+                mBluetoothStatus.setText("Bluetooth Disconnected");
+                break;
+            case BluetoothService.STATUS_HALF_CONNECTED:
+                mBluetoothStatus.setBackgroundColor(getResources().getColor(R.color.md_orange_500));
+                mBluetoothStatus.setText("Bluetooth Connecting");
+                break;
+            case BluetoothService.STATUS_CONNECTED:
+                mBluetoothStatus.setBackgroundColor(getResources().getColor(R.color.md_green_500));
+                mBluetoothStatus.setText("Bluetooth Connected");
+                break;
         }
     }
     final BroadcastReceiver blReceiver = new BroadcastReceiver() {

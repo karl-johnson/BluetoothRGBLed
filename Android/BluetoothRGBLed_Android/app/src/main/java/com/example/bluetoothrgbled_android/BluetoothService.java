@@ -14,14 +14,25 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.example.bluetoothrgbled_android.ConnectedThread.NEW_INSTRUCTION_CORRUPTED;
-import static com.example.bluetoothrgbled_android.ConnectedThread.NEW_INSTRUCTION_IN;
-
 public class BluetoothService extends Service {
     // to enable continuous bluetooth communication regardless of what activity is open
     // additionally, meant to allow control of arduino through notif even when app is closed
     private final IBinder binder = new LocalBinder();
     public Handler mmHandler;
+
+    // constants for connectionStatus
+    public final static int STATUS_DISCONNECTED = 0;
+    public final static int STATUS_HALF_CONNECTED = 1;
+    public final static int STATUS_CONNECTED = 2;
+
+    // constants for mmHandler
+    public final static int CONN_STATUS_UPDATED = 0;
+    public final static int NEW_INSTRUCTION_IN = 1;
+    public final static int NEW_INSTRUCTION_CORRUPTED = 2;
+
+
+    public int connectionStatus = STATUS_DISCONNECTED;
+
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // "random" unique identifier
     BluetoothSocket internalBTSocket = null;
     ConnectedThread internalConnectedThread = null;

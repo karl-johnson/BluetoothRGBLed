@@ -36,6 +36,7 @@ public class BluetoothConfigActivity extends AppCompatActivity {
     private boolean mShouldUnbind; // to prevent unbinding when we shouldn't
 
     private TextView mBluetoothStatus;
+    private TextView mBluetoothStatusColor;
     private TextView mReadBuffer;
     private Button mScanBtn;
     private Button mOffBtn;
@@ -64,6 +65,8 @@ public class BluetoothConfigActivity extends AppCompatActivity {
         setTitle("Bluetooth Settings");
 
         mBluetoothStatus = (TextView)findViewById(R.id.bluetoothStatus);
+        mBluetoothStatusColor = (TextView)findViewById(R.id.bluetoothStatusColor);
+
         mReadBuffer = (TextView) findViewById(R.id.readBuffer);
         mScanBtn = (Button)findViewById(R.id.scan);
         mOffBtn = (Button)findViewById(R.id.off);
@@ -89,10 +92,18 @@ public class BluetoothConfigActivity extends AppCompatActivity {
                 }
 
                 if(msg.what == CONNECTING_STATUS){
-                    if(msg.arg1 == 1)
-                        mBluetoothStatus.setText("Connected to Device: " + (String)(msg.obj));
-                    else
+                    if(msg.arg1 == 1) {
+                        mBluetoothStatus.setText("Connected to Device: " + (String) (msg.obj));
+                        mBluetoothService.connectionStatus = BluetoothService.STATUS_HALF_CONNECTED;
+                        updateBluetoothStatusText(mBluetoothService.connectionStatus);
+                        // we aren't fully connected until we hear arduino itself!
+                    }
+                    else {
                         mBluetoothStatus.setText("Connection Failed");
+                        mBluetoothService.connectionStatus = BluetoothService.STATUS_DISCONNECTED;
+                        updateBluetoothStatusText(mBluetoothService.connectionStatus);
+
+                    }
                 }
             }
         };
@@ -150,6 +161,7 @@ public class BluetoothConfigActivity extends AppCompatActivity {
         Intent BTServiceIntent = new Intent(this, BluetoothService.class);
         getApplicationContext().bindService(BTServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
         mShouldUnbind = true;
+        if(mBluetoothService != null) updateBluetoothStatusText(mBluetoothService.connectionStatus);
     }
     private void bluetoothOn(View view){
         if (!mBTAdapter.isEnabled()) {
@@ -290,6 +302,22 @@ public class BluetoothConfigActivity extends AppCompatActivity {
             }.start();
         }
     };
+    private void updateBluetoothStatusText(int statusIn) {
+        switch(statusIn) {
+            case BluetoothService.STATUS_DISCONNECTED:
+                mBluetoothStatusColor.setBackgroundColor(getResources().getColor(R.color.md_red_500));
+                mBluetoothStatusColor.setText("Bluetooth Disconnected");
+                break;
+            case BluetoothService.STATUS_HALF_CONNECTED:
+                mBluetoothStatusColor.setBackgroundColor(getResources().getColor(R.color.md_orange_500));
+                mBluetoothStatusColor.setText("Bluetooth Connecting");
+                break;
+            case BluetoothService.STATUS_CONNECTED:
+                mBluetoothStatusColor.setBackgroundColor(getResources().getColor(R.color.md_green_500));
+                mBluetoothStatusColor.setText("Bluetooth Connected");
+                break;
+        }
+    }
     protected void onDestroy() {
         super.onDestroy();
         if (mShouldUnbind) {
