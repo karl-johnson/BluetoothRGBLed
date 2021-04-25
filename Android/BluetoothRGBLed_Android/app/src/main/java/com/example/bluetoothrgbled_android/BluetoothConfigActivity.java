@@ -56,8 +56,6 @@ public class BluetoothConfigActivity extends AppCompatActivity {
 
     BluetoothAdapter mBTAdapter = BluetoothAdapter.getDefaultAdapter();
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

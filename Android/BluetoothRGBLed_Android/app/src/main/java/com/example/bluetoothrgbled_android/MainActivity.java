@@ -133,12 +133,17 @@ public class MainActivity extends AppCompatActivity {
             mJoystick.setOnMoveListener(new JoystickView.OnMoveListener() {
                 @Override
                 public void onMove(int angle, int strength) {
+                    /*
                     float[] hsv = {angle,1,strength};
                     int newColor = Color.HSVToColor(hsv);
                     Log.d("JOYSTICK_VALUE",String.format("0x%08X", newColor));
                     sendColorIfChecked((byte) ((newColor>>16) & 0xFF),
                             (byte) ((newColor>>8) & 0xFF),
                             (byte) ((newColor) & 0xFF));
+                    */
+                    // override joystick color behavior with motor behavior
+                    sendMotorVels((short) (4 * strength * Math.cos(Math.toRadians(angle))),
+                            (short) (4 * strength * Math.sin(Math.toRadians(angle))));
                 }
             }, 100);
             mFloatSendButton.setOnClickListener(new View.OnClickListener() {
@@ -293,6 +298,7 @@ public class MainActivity extends AppCompatActivity {
             sendColor(redValue, grnValue, bluValue);
         }
     }
+
     public void sendColor(byte redValue, byte grnValue, byte bluValue) {
         byte[] sendColors = {redValue, grnValue, bluValue, 0x00};
         mBluetoothService.sendInstructionViaThread(new ArduinoInstruction(
@@ -303,6 +309,13 @@ public class MainActivity extends AppCompatActivity {
                 String.valueOf((int)grnValue)+" "+
                 String.valueOf((int)bluValue));
     }
+    public void sendMotorVels(short XVel, short YVel) {
+        // send motor velocity in 1/8 steps per second
+        mBluetoothService.sendInstructionViaThread(new ArduinoInstruction(
+                GeneratedConstants.INST_SET_MTR, XVel, YVel));
+        Log.d("VELS_SENT", String.valueOf(XVel) + String.valueOf(YVel));
+    }
+
     private void handleInstructionFromArduino(ArduinoInstruction instructionIn) {
         Log.d("HEARD_INSTRUCTION","Instruction about to be handled");
         // this is where we decide what we do upon hearing each instruction from Arduino

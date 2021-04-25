@@ -10,6 +10,9 @@ public class GeneratedConstants {
 	// Instruction pair: led_color
 	public final static byte INST_SET_LED = (byte) 0b10001000;
 	public final static byte INST_CNF_LED = (byte) 0b00001000;
+	// Instruction pair: motor_speed
+	public final static byte INST_SET_MTR = (byte) 0b10001010;
+	public final static byte INST_CNF_MTR = (byte) 0b00001010;
 	// Instruction pair: ping_float
 	public final static byte INST_PING_FLO = (byte) 0b10000001;
 	public final static byte INST_PONG_FLO = (byte) 0b00000001;

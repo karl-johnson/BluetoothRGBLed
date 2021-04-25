@@ -157,8 +157,12 @@ int instDecode(byte* message, instructionStruct* returnStruct) {
     //memcpy(&(returnStruct->intValue1), message+1, sizeof(int));
     //memcpy(&(returnStruct->intValue2), message+3, sizeof(int));
     returnStruct->instruction = message[0];
-    returnStruct->intValue1 = *((int*) (message+1));
-    returnStruct->intValue2 = *((int*) (message+3));
+    returnStruct->intValue1 = int(
+        ((byte) (message[1])) << 8 |
+        ((byte) (message[2])));
+    returnStruct->intValue2 = int(
+        ((byte) (message[3])) << 8 |
+        ((byte) (message[4])));
     return 0;
   }
 }

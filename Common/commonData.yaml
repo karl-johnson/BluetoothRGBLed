@@ -35,6 +35,13 @@
         android_code: "0b10001000" # instruction byte value of response
         arduino_string: "INST_CNF_LED" # arduino response instruction name
         arduino_code: "0b00001000" # instruction byte value of response
+    - motor_speed:
+        # set motor speeds - initial test before real panograph JAVA_OUTPUTPATH
+        # want to know if this communication infrastructure will work
+        android_string: "INST_SET_MTR" # android prompt instruction name
+        android_code: "0b10001010" # instruction byte value of response
+        arduino_string: "INST_CNF_MTR" # arduino response instruction name
+        arduino_code: "0b00001010" # instruction byte value of response
     - ping_float:
         android_string: "INST_PING_FLO" # add pi to this float!
         android_code: "0b10000001" # instruction byte value of response

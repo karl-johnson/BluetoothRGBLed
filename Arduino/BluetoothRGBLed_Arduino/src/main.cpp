@@ -1,6 +1,8 @@
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include <AccelStepper.h>
+#include <MultiStepper.h>
 //#include "Instruction.h"
 #include "GeneratedConstants.h"
 #include "Utils.h"
@@ -15,6 +17,13 @@
 #define BTH_EN 6
 #define BAUD_RATE 57600
 
+#define DIR_X 11
+#define STP_X 10
+#define DIR_Y A1
+#define STP_Y A0
+
+AccelStepper stepperX(AccelStepper::DRIVER, STP_X, DIR_X);
+AccelStepper stepperY(AccelStepper::DRIVER, STP_Y, DIR_Y);
 
 // global variables
 byte inputByteArray[MESSAGE_LENGTH];
@@ -30,6 +39,11 @@ void setup() {
   bluetooth.begin(38400);
   // this baud rate is hardcoded b/c set in HC-05 AT+ settings
   // TODO: better solution
+
+  stepperX.setMaxSpeed(400.0);
+  stepperX.setAcceleration(500.0);
+  stepperY.setMaxSpeed(400.0);
+  stepperY.setAcceleration(500.0);
 }
 
 void loop() {
@@ -40,6 +54,7 @@ void loop() {
     analogWrite(RED_PIN, 0);
     analogWrite(GRN_PIN, 0);
     analogWrite(BLU_PIN, 0);
+    // stop steppers
     while(digitalRead(BTH_ST) == STATE_DISCONNECTED) {
       // blink LED until we re-connect
       // blocking delays poll every second
@@ -59,7 +74,6 @@ void loop() {
     analogWrite(GRN_PIN,0);
     encodeAndSendInts(&bluetooth, INST_CONN_CONF, 0, 0, sentMessageHistory);
     delay(250);
-
     // this blocks us being able to get data for 2s
     // in the future, implement a ping back to Android when we're ready for data
   }
@@ -78,6 +92,13 @@ void loop() {
     //Serial.println(latestInstruction.instruction);
     // if the instruction was good, parse it
     switch(latestInstruction.instruction) {
+      case INST_SET_MTR:
+        stepperX.setSpeed(latestInstruction.intValue1);
+        stepperY.setSpeed(latestInstruction.intValue2);
+        //Serial.print(latestInstruction.intValue1);
+        //erial.print(", ");
+        //Serial.println(latestInstruction.intValue2);
+        break;
       case INST_SET_LED:
         //Serial.println("Setting LEDs:");
         // first byte of value is red
@@ -123,4 +144,6 @@ void loop() {
     }
     inputReadyFlag = false;
   }
+  stepperX.runSpeed();
+  stepperY.runSpeed();
 }
